@@ -141,9 +141,13 @@ def main(self):
     # Event Loop to process "events" and get the "values" of the inputs
     # test = 0
     ROI0 = {}
+    ROI0["enabled"] = False
     ROI1 = {}
+    ROI1["enabled"] = False
     ROI2 = {}
+    ROI2["enabled"] = False
     ROI3 = {}
+    ROI3["enabled"] = False
     while True:
         event, values = window.read()
         if (
@@ -180,6 +184,7 @@ def main(self):
     Y_remaining = Y
 
     if ROI0["enabled"]:
+        print("roi0 enabled")
         color = "tab:orange"
         rect_0_histo = patches.Rectangle(
             (ROI0["Xmin"], ROI0["Ymin"]),
@@ -227,6 +232,7 @@ def main(self):
         Y_remaining = Y_remaining[remaining_indexes]
 
     if ROI1["enabled"]:
+        print("roi1 enabled")
         color = "tab:green"
         rect_1_histo = patches.Rectangle(
             (ROI1["Xmin"], ROI1["Ymin"]),
@@ -283,9 +289,9 @@ def main(self):
     ax = plt.axes(projection="3d")
     ax.scatter3D(X_remaining, Y_remaining, T_remaining, marker=".")
     if ROI0["enabled"]:
-        ax.scatter3D(X_ROI0, Y_ROI0, T_ROI0, marker=".")
+        ax.scatter3D(X_ROI0, Y_ROI0, T_ROI0, marker=".", color="tab:orange")
     if ROI1["enabled"]:
-        ax.scatter3D(X_ROI1, Y_ROI1, T_ROI1, marker=".")
+        ax.scatter3D(X_ROI1, Y_ROI1, T_ROI1, marker=".", color="tab:green")
     plt.xlabel("X")
     plt.ylabel("Y")
     fig1.show()
