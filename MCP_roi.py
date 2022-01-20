@@ -363,5 +363,5 @@ def main(self):
         MCP_stats_folder.mkdir(exist_ok=True)
         file_name = MCP_stats_folder / data.path.stem
 
-        with open(file_name, "w", encoding="utf-8") as file:
+        with open(str(file_name) + ".json", "w", encoding="utf-8") as file:
             json.dump(to_mcp_dictionary, file, ensure_ascii=False, indent=4)
