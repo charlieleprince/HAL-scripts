@@ -40,7 +40,25 @@ def plotfigs(ax, X, Y, T):
     ax[1].set_ylabel("number of events")
 
 
+def isROIset(values, str):
+    if values["Tmin" + str] == "":
+        return False
+    if values["Tmax" + str] == "":
+        return False
+    if values["Xmin" + str] == "":
+        return False
+    if values["Xmax" + str] == "":
+        return False
+    if values["Ymin" + str] == "":
+        return False
+    if values["Ymax" + str] == "":
+        return False
+    return True
+
+
 def setROIvalues(dict, values, str):
+    if isROIset(values, str) is False:
+        return
     dict["Tmin"] = float(values["Tmin" + str])
     dict["Tmax"] = float(values["Tmax" + str])
     dict["Xmin"] = float(values["Xmin" + str])
@@ -49,7 +67,9 @@ def setROIvalues(dict, values, str):
     dict["Ymax"] = float(values["Ymax" + str])
 
 
-def displayROIs(ax, color, ROI, ROI_name):
+def displayROIs(ax, color, ROI, ROI_name, values, str):
+    if isROIset(values, str) is False:
+        return
     rect_0_histo = patches.Rectangle(
         (ROI["Xmin"], ROI["Ymin"]),
         ROI["Xmax"] - ROI["Xmin"],
@@ -225,22 +245,22 @@ def main(self):
                 setROIvalues(ROI0, values, "0")
                 color = "tab:orange"
                 plotfigs(ax, X, Y, T)
-                displayROIs(ax, color, ROI0, "ROI::0")
+                displayROIs(ax, color, ROI0, "ROI::0", values, "0")
             if values["ROI1"]:
                 setROIvalues(ROI1, values, "1")
                 color = "tab:green"
                 plotfigs(ax, X, Y, T)
-                displayROIs(ax, color, ROI1, "ROI::1")
+                displayROIs(ax, color, ROI1, "ROI::1", values, "1")
             if values["ROI2"]:
                 setROIvalues(ROI2, values, "2")
                 color = "tab:red"
                 plotfigs(ax, X, Y, T)
-                displayROIs(ax, color, ROI2, "ROI::2")
+                displayROIs(ax, color, ROI2, "ROI::2", values, "2")
             if values["ROI3"]:
                 setROIvalues(ROI3, values, "3")
                 color = "tab:purple"
                 plotfigs(ax, X, Y, T)
-                displayROIs(ax, color, ROI3, "ROI::3")
+                displayROIs(ax, color, ROI3, "ROI::3", values, "3")
             fig_agg.draw()
 
         if event == "Ok":
@@ -249,6 +269,10 @@ def main(self):
                 setROIvalues(ROI0, values)
             if ROI1["enabled"]:
                 setROIvalues(ROI1, values)
+            if ROI2["enabled"]:
+                setROIvalues(ROI2, values)
+            if ROI3["enabled"]:
+                setROIvalues(ROI3, values)
             break
 
     window.close()
