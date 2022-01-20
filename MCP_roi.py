@@ -4,6 +4,7 @@
 import logging
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import numpy as np
 import scipy.optimize as opt
 import PySimpleGUI as sg
@@ -21,7 +22,62 @@ logger = logging.getLogger(__name__)
 NAME = "ROI"  # display name, used in menubar and command palette
 CATEGORY = "MCP"  # category (note that CATEGORY="" is a valid choice)
 
+# layout tools
+def draw_figure(canvas, figure):
+    figure_canvas_agg = FigureCanvasTkAgg(figure, canvas)
+    figure_canvas_agg.draw()
+    figure_canvas_agg.get_tk_widget().pack(side="top", fill="both", expand=1)
+    return figure_canvas_agg
 
+
+def plotfigs(ax, X, Y, T):
+    ax[0].hist2d(X, Y, bins=np.linspace(-40, 40, 2 * 81), cmap=plt.cm.jet)
+    ax[0].set_xlabel("X")
+    ax[0].set_ylabel("Y")
+    ax[0].grid(True)
+    ax[1].hist(T, bins=np.linspace(0, 180, 300), color="tab:blue")
+    ax[1].set_xlabel("time (ms)")
+    ax[1].set_ylabel("number of events")
+
+
+def setROIvalues(dict, values, str):
+    dict["Tmin"] = float(values["Tmin" + str])
+    dict["Tmax"] = float(values["Tmax" + str])
+    dict["Xmin"] = float(values["Xmin" + str])
+    dict["Xmax"] = float(values["Xmax" + str])
+    dict["Ymin"] = float(values["Ymin" + str])
+    dict["Ymax"] = float(values["Ymax" + str])
+
+
+def displayROIs(ax, color, ROI, ROI_name):
+    rect_0_histo = patches.Rectangle(
+        (ROI["Xmin"], ROI["Ymin"]),
+        ROI["Xmax"] - ROI["Xmin"],
+        ROI["Ymax"] - ROI["Ymin"],
+        linewidth=2,
+        edgecolor=color,
+        facecolor="none",
+    )
+    ax[0].add_patch(rect_0_histo)
+    ax[0].text(
+        ROI["Xmin"],
+        ROI["Ymax"],
+        ROI_name,
+        color=color,
+    )
+    ax[1].axvline(ROI["Tmin"], linestyle="dotted", color=color)
+    ax[1].axvline(ROI["Tmax"], linestyle="dotted", color=color)
+    ax[1].axvspan(ROI["Tmin"], ROI["Tmax"], alpha=0.2, color=color)
+
+
+def get_enabled_rois(ROI0, ROI1, ROI2, ROI3, values):
+    ROI0["enabled"] = values["ROI0"]
+    ROI1["enabled"] = values["ROI1"]
+    ROI2["enabled"] = values["ROI2"]
+    ROI3["enabled"] = values["ROI3"]
+
+
+# main
 def main(self):
     """
     the script also have to define a `main` function. When playing a script,
@@ -44,12 +100,16 @@ def main(self):
     # get path
     item = selection[0]
     data.path = item.data(QtCore.Qt.UserRole)
+    if not data.path.suffix == ".atoms":
+        return
     # get data
     X, Y, T = data.getrawdata()
 
     # gui layout
 
-    layout = [
+    fig, ax = plt.subplots(2, 1, gridspec_kw={"height_ratios": [3, 1]}, figsize=(6, 8))
+    plotfigs(ax, X, Y, T)
+    col1 = [
         [sg.Checkbox("ROI::0", default=True, key="ROI0", text_color="orange")],
         [
             sg.Text("Tmin"),
@@ -129,10 +189,18 @@ def main(self):
         [sg.Button("Ok"), sg.Button("Watch ROIs"), sg.Button("Cancel")],
     ]
 
+    col2 = [[sg.Canvas(key="-CANVAS-")]]
+
+    layout = [[sg.Frame(layout=col1, title=""), sg.Frame(layout=col2, title="")]]
+
     # Create the Window
-    window = sg.Window("Welcome to the ROI manager", layout)
-    # Event Loop to process "events" and get the "values" of the inputs
-    # test = 0
+    window = sg.Window("Welcome to the ROI manager", layout, finalize=True)
+
+    # Associate fig with Canvas.
+    fig_agg = draw_figure(window["-CANVAS-"].TKCanvas, fig)
+    fig_agg.draw()
+
+    # Initialize ROIs
     ROI0 = {}
     ROI0["enabled"] = False
     ROI1 = {}
@@ -141,6 +209,8 @@ def main(self):
     ROI2["enabled"] = False
     ROI3 = {}
     ROI3["enabled"] = False
+
+    # Event Loop to process "events" and get the "values" of the inputs
     while True:
         event, values = window.read()
         if (
@@ -149,67 +219,42 @@ def main(self):
             break
 
         if event == "Watch ROIs":
-            break
-        # fig, ax = plt.subplots(
-        #    2, 1, gridspec_kw={"height_ratios": [3, 1]}, figsize=(6, 8)
-        # )
-        # ax[0].hist2d(X, Y, bins=np.linspace(-40, 40, 2 * 81), cmap=plt.cm.jet)
-        # ax[0].set_xlabel("X")
-        # ax[0].set_ylabel("Y")
-        # ax[1].hist(T, bins=np.linspace(0, 180, 300))
-        # ax[1].set_xlabel("time (ms)")
-        # ax[1].set_ylabel("number of events")
-        # fig.show()
+            ax[0].cla()
+            ax[1].cla()
+            if values["ROI0"]:
+                setROIvalues(ROI0, values, "0")
+                color = "tab:orange"
+                plotfigs(ax, X, Y, T)
+                displayROIs(ax, color, ROI0, "ROI::0")
+            if values["ROI1"]:
+                setROIvalues(ROI1, values, "1")
+                color = "tab:green"
+                plotfigs(ax, X, Y, T)
+                displayROIs(ax, color, ROI1, "ROI::1")
+            if values["ROI2"]:
+                setROIvalues(ROI2, values, "2")
+                color = "tab:red"
+                plotfigs(ax, X, Y, T)
+                displayROIs(ax, color, ROI2, "ROI::2")
+            if values["ROI3"]:
+                setROIvalues(ROI3, values, "3")
+                color = "tab:purple"
+                plotfigs(ax, X, Y, T)
+                displayROIs(ax, color, ROI3, "ROI::3")
+            fig_agg.draw()
 
         if event == "Ok":
-            ROI0["enabled"] = values["ROI0"]
-            ROI1["enabled"] = values["ROI1"]
-            ROI2["enabled"] = values["ROI2"]
-            ROI3["enabled"] = values["ROI3"]
-
+            get_enabled_rois(ROI0, ROI1, ROI2, ROI3, values)
             if ROI0["enabled"]:
-                ROI0["Tmin"] = float(values["Tmin0"])
-                ROI0["Tmax"] = float(values["Tmax0"])
-                ROI0["Xmin"] = float(values["Xmin0"])
-                ROI0["Xmax"] = float(values["Xmax0"])
-                ROI0["Ymin"] = float(values["Ymin0"])
-                ROI0["Ymax"] = float(values["Ymax0"])
+                setROIvalues(ROI0, values)
             if ROI1["enabled"]:
-                ROI1["Tmin"] = float(values["Tmin1"])
-                ROI1["Tmax"] = float(values["Tmax1"])
-                ROI1["Xmin"] = float(values["Xmin1"])
-                ROI1["Xmax"] = float(values["Xmax1"])
-                ROI1["Ymin"] = float(values["Ymin1"])
-                ROI1["Ymax"] = float(values["Ymax1"])
+                setROIvalues(ROI1, values)
             break
 
     window.close()
-    # plt.close(fig)
     fig, ax = plt.subplots(2, 1, gridspec_kw={"height_ratios": [3, 1]}, figsize=(6, 8))
 
     if ROI0["enabled"]:
-        print("roi0 enabled")
-        color = "tab:orange"
-        rect_0_histo = patches.Rectangle(
-            (ROI0["Xmin"], ROI0["Ymin"]),
-            ROI0["Xmax"] - ROI0["Xmin"],
-            ROI0["Ymax"] - ROI0["Ymin"],
-            linewidth=1,
-            edgecolor=color,
-            facecolor="none",
-        )
-        ax[0].add_patch(rect_0_histo)
-        ax[0].text(
-            ROI0["Xmin"],
-            ROI0["Ymax"],
-            "ROI::0",
-            color=color,
-        )
-
-        ax[1].axvline(ROI0["Tmin"], linestyle="dotted", color=color)
-        ax[1].axvline(ROI0["Tmax"], linestyle="dotted", color=color)
-        ax[1].axvspan(ROI0["Tmin"], ROI0["Tmax"], alpha=0.2, color=color)
-
         ROI0_indexes = (
             (T > ROI0["Tmin"])
             & (T < ROI0["Tmax"])
@@ -223,28 +268,6 @@ def main(self):
         X_ROI0 = X[ROI0_indexes]
         Y_ROI0 = Y[ROI0_indexes]
     if ROI1["enabled"]:
-        print("roi1 enabled")
-        color = "tab:green"
-        rect_1_histo = patches.Rectangle(
-            (ROI1["Xmin"], ROI1["Ymin"]),
-            ROI1["Xmax"] - ROI1["Xmin"],
-            ROI1["Ymax"] - ROI1["Ymin"],
-            linewidth=1,
-            edgecolor=color,
-            facecolor="none",
-        )
-        ax[0].add_patch(rect_1_histo)
-        ax[0].text(
-            ROI1["Xmin"],
-            ROI1["Ymax"],
-            "ROI::1",
-            color=color,
-        )
-
-        ax[1].axvline(ROI1["Tmin"], linestyle="dotted", color=color)
-        ax[1].axvline(ROI1["Tmax"], linestyle="dotted", color=color)
-        ax[1].axvspan(ROI1["Tmin"], ROI1["Tmax"], alpha=0.2, color=color)
-
         ROI1_indexes = (
             (T > ROI1["Tmin"])
             & (T < ROI1["Tmax"])
@@ -257,11 +280,3 @@ def main(self):
         T_ROI1 = T[ROI1_indexes]
         X_ROI1 = X[ROI1_indexes]
         Y_ROI1 = Y[ROI1_indexes]
-
-    ax[0].hist2d(X, Y, bins=np.linspace(-40, 40, 2 * 81), cmap=plt.cm.jet)
-    ax[0].set_xlabel("X")
-    ax[0].set_ylabel("Y")
-    ax[1].hist(T, bins=np.linspace(0, 180, 300))
-    ax[1].set_xlabel("time (ms)")
-    ax[1].set_ylabel("number of events")
-    fig.show()
