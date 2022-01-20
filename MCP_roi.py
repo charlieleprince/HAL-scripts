@@ -44,18 +44,11 @@ def main(self):
     # get path
     item = selection[0]
     data.path = item.data(QtCore.Qt.UserRole)
+    # get data
     X, Y, T = data.getrawdata()
 
-    fig, ax = plt.subplots(2, 1, gridspec_kw={"height_ratios": [3, 1]}, figsize=(6, 8))
-    ax[0].hist2d(X, Y, bins=np.linspace(-40, 40, 2 * 81), cmap=plt.cm.jet)
-    ax[0].set_xlabel("X")
-    ax[0].set_ylabel("Y")
-    ax[1].hist(T, bins=np.linspace(0, 180, 300))
-    ax[1].set_xlabel("time (ms)")
-    ax[1].set_ylabel("number of events")
-    fig.show()
+    # gui layout
 
-    nb_of_ROIs = 0
     layout = [
         [sg.Checkbox("ROI::0", default=True, key="ROI0", text_color="orange")],
         [
@@ -133,11 +126,11 @@ def main(self):
             sg.Text("Ymax"),
             sg.Input(size=(16, 1), key="Ymax3"),
         ],
-        [sg.Button("Ok"), sg.Button("Cancel")],
+        [sg.Button("Ok"), sg.Button("Watch ROIs"), sg.Button("Cancel")],
     ]
 
     # Create the Window
-    window = sg.Window("Welcome to the ROI layout", layout)
+    window = sg.Window("Welcome to the ROI manager", layout)
     # Event Loop to process "events" and get the "values" of the inputs
     # test = 0
     ROI0 = {}
@@ -154,7 +147,21 @@ def main(self):
             event == sg.WIN_CLOSED or event == "Cancel"
         ):  # if user closes window or clicks cancel
             break
-        elif event == "Ok":
+
+        if event == "Watch ROIs":
+            break
+        # fig, ax = plt.subplots(
+        #    2, 1, gridspec_kw={"height_ratios": [3, 1]}, figsize=(6, 8)
+        # )
+        # ax[0].hist2d(X, Y, bins=np.linspace(-40, 40, 2 * 81), cmap=plt.cm.jet)
+        # ax[0].set_xlabel("X")
+        # ax[0].set_ylabel("Y")
+        # ax[1].hist(T, bins=np.linspace(0, 180, 300))
+        # ax[1].set_xlabel("time (ms)")
+        # ax[1].set_ylabel("number of events")
+        # fig.show()
+
+        if event == "Ok":
             ROI0["enabled"] = values["ROI0"]
             ROI1["enabled"] = values["ROI1"]
             ROI2["enabled"] = values["ROI2"]
@@ -177,11 +184,8 @@ def main(self):
             break
 
     window.close()
-    plt.close(fig)
+    # plt.close(fig)
     fig, ax = plt.subplots(2, 1, gridspec_kw={"height_ratios": [3, 1]}, figsize=(6, 8))
-    T_remaining = T
-    X_remaining = X
-    Y_remaining = Y
 
     if ROI0["enabled"]:
         print("roi0 enabled")
@@ -207,30 +211,17 @@ def main(self):
         ax[1].axvspan(ROI0["Tmin"], ROI0["Tmax"], alpha=0.2, color=color)
 
         ROI0_indexes = (
-            (T_remaining > ROI0["Tmin"])
-            & (T_remaining < ROI0["Tmax"])
-            & (X_remaining > ROI0["Xmin"])
-            & (X_remaining < ROI0["Xmax"])
-            & (Y_remaining > ROI0["Ymin"])
-            & (Y_remaining < ROI0["Ymax"])
+            (T > ROI0["Tmin"])
+            & (T < ROI0["Tmax"])
+            & (X > ROI0["Xmin"])
+            & (X < ROI0["Xmax"])
+            & (Y > ROI0["Ymin"])
+            & (Y < ROI0["Ymax"])
         )
 
-        remaining_indexes = (
-            ~(T_remaining > ROI0["Tmin"])
-            | ~(T_remaining < ROI0["Tmax"])
-            | ~(X_remaining > ROI0["Xmin"])
-            | ~(X_remaining < ROI0["Xmax"])
-            | ~(Y_remaining > ROI0["Ymin"])
-            | ~(Y_remaining < ROI0["Ymax"])
-        )
-
-        T_ROI0 = T_remaining[ROI0_indexes]
-        X_ROI0 = X_remaining[ROI0_indexes]
-        Y_ROI0 = Y_remaining[ROI0_indexes]
-        T_remaining = T_remaining[remaining_indexes]
-        X_remaining = X_remaining[remaining_indexes]
-        Y_remaining = Y_remaining[remaining_indexes]
-
+        T_ROI0 = T[ROI0_indexes]
+        X_ROI0 = X[ROI0_indexes]
+        Y_ROI0 = Y[ROI0_indexes]
     if ROI1["enabled"]:
         print("roi1 enabled")
         color = "tab:green"
@@ -255,29 +246,18 @@ def main(self):
         ax[1].axvspan(ROI1["Tmin"], ROI1["Tmax"], alpha=0.2, color=color)
 
         ROI1_indexes = (
-            (T_remaining > ROI1["Tmin"])
-            & (T_remaining < ROI1["Tmax"])
-            & (X_remaining > ROI1["Xmin"])
-            & (X_remaining < ROI1["Xmax"])
-            & (Y_remaining > ROI1["Ymin"])
-            & (Y_remaining < ROI1["Ymax"])
+            (T > ROI1["Tmin"])
+            & (T < ROI1["Tmax"])
+            & (X > ROI1["Xmin"])
+            & (X < ROI1["Xmax"])
+            & (Y > ROI1["Ymin"])
+            & (Y < ROI1["Ymax"])
         )
 
-        remaining_indexes = (
-            ~(T_remaining > ROI1["Tmin"])
-            | ~(T_remaining < ROI1["Tmax"])
-            | ~(X_remaining > ROI1["Xmin"])
-            | ~(X_remaining < ROI1["Xmax"])
-            | ~(Y_remaining > ROI1["Ymin"])
-            | ~(Y_remaining < ROI1["Ymax"])
-        )
+        T_ROI1 = T[ROI1_indexes]
+        X_ROI1 = X[ROI1_indexes]
+        Y_ROI1 = Y[ROI1_indexes]
 
-        T_ROI1 = T_remaining[ROI1_indexes]
-        X_ROI1 = X_remaining[ROI1_indexes]
-        Y_ROI1 = Y_remaining[ROI1_indexes]
-        T_remaining = T_remaining[remaining_indexes]
-        X_remaining = X_remaining[remaining_indexes]
-        Y_remaining = Y_remaining[remaining_indexes]
     ax[0].hist2d(X, Y, bins=np.linspace(-40, 40, 2 * 81), cmap=plt.cm.jet)
     ax[0].set_xlabel("X")
     ax[0].set_ylabel("Y")
@@ -285,13 +265,3 @@ def main(self):
     ax[1].set_xlabel("time (ms)")
     ax[1].set_ylabel("number of events")
     fig.show()
-    fig1 = plt.figure()
-    ax = plt.axes(projection="3d")
-    ax.scatter3D(X_remaining, Y_remaining, T_remaining, marker=".")
-    if ROI0["enabled"]:
-        ax.scatter3D(X_ROI0, Y_ROI0, T_ROI0, marker=".", color="tab:orange")
-    if ROI1["enabled"]:
-        ax.scatter3D(X_ROI1, Y_ROI1, T_ROI1, marker=".", color="tab:green")
-    plt.xlabel("X")
-    plt.ylabel("Y")
-    fig1.show()
