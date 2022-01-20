@@ -292,66 +292,76 @@ def main(self):
             break
 
     window.close()
-    print(len(X))
-    to_mcp_dictionary = []
-    to_mcp_dictionary.append(
-        {
-            "name": "Ntot",
-            "value": len(X),
-            "diplay": "%o",
-            "unit": "",
-            "comment": "",
-        }
-    )
     # now the ROIs are set
-    if ROI0["enabled"]:
-        (X_ROI0, Y_ROI0, T_ROI0) = ROI_data(ROI0, X, Y, T)
+
+    for k in range(len(selection)):
+        item = selection[k]
+        data.path = item.data(QtCore.Qt.UserRole)
+        print(data.path)
+        if not data.path.suffix == ".atoms":
+            return
+        # get data
+        X, Y, T = data.getrawdata()
+
+        to_mcp_dictionary = []
         to_mcp_dictionary.append(
             {
-                "name": "ROI 0::N",
-                "value": len(X_ROI0),
-                "diplay": "%o",
-                "unit": "",
-                "comment": "",
-            }
-        )
-    if ROI1["enabled"]:
-        (X_ROI1, Y_ROI1, T_ROI1) = ROI_data(ROI1, X, Y, T)
-        to_mcp_dictionary.append(
-            {
-                "name": "ROI 1::N",
-                "value": len(X_ROI1),
-                "diplay": "%o",
-                "unit": "",
-                "comment": "",
-            }
-        )
-    if ROI2["enabled"]:
-        (X_ROI2, Y_ROI2, T_ROI2) = ROI_data(ROI2, X, Y, T)
-        to_mcp_dictionary.append(
-            {
-                "name": "ROI 2::N",
-                "value": len(X_ROI2),
-                "diplay": "%o",
-                "unit": "",
-                "comment": "",
-            }
-        )
-    if ROI3["enabled"]:
-        (X_ROI3, Y_ROI3, T_ROI3) = ROI_data(ROI3, X, Y, T)
-        to_mcp_dictionary.append(
-            {
-                "name": "ROI 3::N",
-                "value": len(X_ROI3),
+                "name": "Ntot",
+                "value": len(X),
                 "diplay": "%o",
                 "unit": "",
                 "comment": "",
             }
         )
 
-    MCP_stats_folder = data.path.parent / ".MCPstats"
-    MCP_stats_folder.mkdir(exist_ok=True)
-    file_name = MCP_stats_folder / data.path.stem
+        if ROI0["enabled"]:
+            (X_ROI0, Y_ROI0, T_ROI0) = ROI_data(ROI0, X, Y, T)
+            to_mcp_dictionary.append(
+                {
+                    "name": "ROI 0::N",
+                    "value": len(X_ROI0),
+                    "diplay": "%o",
+                    "unit": "",
+                    "comment": "",
+                }
+            )
+        if ROI1["enabled"]:
+            (X_ROI1, Y_ROI1, T_ROI1) = ROI_data(ROI1, X, Y, T)
+            to_mcp_dictionary.append(
+                {
+                    "name": "ROI 1::N",
+                    "value": len(X_ROI1),
+                    "diplay": "%o",
+                    "unit": "",
+                    "comment": "",
+                }
+            )
+        if ROI2["enabled"]:
+            (X_ROI2, Y_ROI2, T_ROI2) = ROI_data(ROI2, X, Y, T)
+            to_mcp_dictionary.append(
+                {
+                    "name": "ROI 2::N",
+                    "value": len(X_ROI2),
+                    "diplay": "%o",
+                    "unit": "",
+                    "comment": "",
+                }
+            )
+        if ROI3["enabled"]:
+            (X_ROI3, Y_ROI3, T_ROI3) = ROI_data(ROI3, X, Y, T)
+            to_mcp_dictionary.append(
+                {
+                    "name": "ROI 3::N",
+                    "value": len(X_ROI3),
+                    "diplay": "%o",
+                    "unit": "",
+                    "comment": "",
+                }
+            )
 
-    with open(file_name, "w", encoding="utf-8") as file:
-        json.dump(to_mcp_dictionary, file, ensure_ascii=False, indent=4)
+        MCP_stats_folder = data.path.parent / ".MCPstats"
+        MCP_stats_folder.mkdir(exist_ok=True)
+        file_name = MCP_stats_folder / data.path.stem
+
+        with open(file_name, "w", encoding="utf-8") as file:
+            json.dump(to_mcp_dictionary, file, ensure_ascii=False, indent=4)
