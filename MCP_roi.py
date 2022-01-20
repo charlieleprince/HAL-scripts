@@ -97,6 +97,23 @@ def get_enabled_rois(ROI0, ROI1, ROI2, ROI3, values):
     ROI3["enabled"] = values["ROI3"]
 
 
+def ROI_data(ROI, X, Y, T):
+    ROI_indices = (
+        (T > ROI["Tmin"])
+        & (T < ROI["Tmax"])
+        & (X > ROI["Xmin"])
+        & (X < ROI["Xmax"])
+        & (Y > ROI["Ymin"])
+        & (Y < ROI["Ymax"])
+    )
+    T_ROI = T[ROI_indices]
+    X_ROI = X[ROI_indices]
+    Y_ROI = Y[ROI_indices]
+    return (X_ROI, Y_ROI, T_ROI)
+
+    return
+
+
 # main
 def main(self):
     """
@@ -266,41 +283,27 @@ def main(self):
         if event == "Ok":
             get_enabled_rois(ROI0, ROI1, ROI2, ROI3, values)
             if ROI0["enabled"]:
-                setROIvalues(ROI0, values)
+                setROIvalues(ROI0, values, "0")
             if ROI1["enabled"]:
-                setROIvalues(ROI1, values)
+                setROIvalues(ROI1, values, "1")
             if ROI2["enabled"]:
-                setROIvalues(ROI2, values)
+                setROIvalues(ROI2, values, "2")
             if ROI3["enabled"]:
-                setROIvalues(ROI3, values)
+                setROIvalues(ROI3, values, "3")
             break
 
     window.close()
-    fig, ax = plt.subplots(2, 1, gridspec_kw={"height_ratios": [3, 1]}, figsize=(6, 8))
-
+    print(len(X))
+    # now the ROIs are set
     if ROI0["enabled"]:
-        ROI0_indexes = (
-            (T > ROI0["Tmin"])
-            & (T < ROI0["Tmax"])
-            & (X > ROI0["Xmin"])
-            & (X < ROI0["Xmax"])
-            & (Y > ROI0["Ymin"])
-            & (Y < ROI0["Ymax"])
-        )
-
-        T_ROI0 = T[ROI0_indexes]
-        X_ROI0 = X[ROI0_indexes]
-        Y_ROI0 = Y[ROI0_indexes]
+        (X_ROI0, Y_ROI0, T_ROI0) = ROI_data(ROI0, X, Y, T)
+        print(len(X_ROI0))
     if ROI1["enabled"]:
-        ROI1_indexes = (
-            (T > ROI1["Tmin"])
-            & (T < ROI1["Tmax"])
-            & (X > ROI1["Xmin"])
-            & (X < ROI1["Xmax"])
-            & (Y > ROI1["Ymin"])
-            & (Y < ROI1["Ymax"])
-        )
-
-        T_ROI1 = T[ROI1_indexes]
-        X_ROI1 = X[ROI1_indexes]
-        Y_ROI1 = Y[ROI1_indexes]
+        (X_ROI1, Y_ROI1, T_ROI1) = ROI_data(ROI1, X, Y, T)
+        print(len(X_ROI1))
+    if ROI2["enabled"]:
+        (X_ROI2, Y_ROI2, T_ROI2) = ROI_data(ROI2, X, Y, T)
+        print(len(X_ROI2))
+    if ROI0["enabled"]:
+        (X_ROI3, Y_ROI3, T_ROI3) = ROI_data(ROI3, X, Y, T)
+        print(len(X_ROI3))
