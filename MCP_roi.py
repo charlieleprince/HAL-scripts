@@ -352,9 +352,15 @@ def main(self):
             label_color = "#3FFF53FF"
             roi_name = "ROI 0"
 
+            # fix me: the position and sizes are given so that it works
+            # well on the HAL display, however for now the values do not
+            # correspond to any calibrated length
             new_roi = pg.RectROI(
-                pos=[ROI0["Xmin"], ROI0["Ymin"]],
-                size=[ROI0["Xmax"] - ROI0["Xmin"], ROI0["Ymax"] - ROI0["Ymin"]],
+                pos=[ROI0["Xmin"] * 10 + 400, ROI0["Ymin"] * 10 + 400],
+                size=[
+                    ROI0["Xmax"] * 10 - ROI0["Xmin"] * 10,
+                    ROI0["Ymax"] * 10 - ROI0["Ymin"] * 10,
+                ],
                 rotatable=False,
                 pen=roi_style,
                 hoverPen=roi_hover_style,
