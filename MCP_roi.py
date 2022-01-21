@@ -13,6 +13,16 @@ from PyQt5.QtWidgets import QInputDialog
 from PyQt5.QtCore import Qt
 from PyQt5 import QtCore
 from HAL.gui.dataexplorer import getSelectionMetaDataFromCache
+import HAL.gui.fitting as fitting
+import pyqtgraph as pg
+from HAL.classes.display.abstractImage import AbstractImageDisplay
+
+# from HAL.gui.quickplot import refreshMetaDataList as quickplotrefreshMetaDataList
+# from HAL.gui.advancedplot import refreshMetaDataList as advancedplotrefreshMetaDataList
+# from HAL.gui.advancedplot import (
+#    refreshMetadataLivePlot as advancedplotrefreshMetadataLivePlot,
+# )
+# from HAL.gui.correlations import refreshMetaDataList as correlationsrefreshMetaDataList
 import json
 
 logger = logging.getLogger(__name__)
@@ -111,6 +121,12 @@ def ROI_data(ROI, X, Y, T):
     X_ROI = X[ROI_indices]
     Y_ROI = Y[ROI_indices]
     return (X_ROI, Y_ROI, T_ROI)
+
+
+def _roi_changed(self):
+    # move self.label
+    position = self.pos()
+    self.label.setPos(position[0], position[1])
 
 
 # main
@@ -297,7 +313,6 @@ def main(self):
     for k in range(len(selection)):
         item = selection[k]
         data.path = item.data(QtCore.Qt.UserRole)
-        print(data.path)
         if not data.path.suffix == ".atoms":
             return
         # get data
@@ -325,6 +340,53 @@ def main(self):
                     "comment": "",
                 }
             )
+            # HAL display starts now
+            # fitting.addROI(self)
+
+            roi_style = {"color": "#3FFF53FF", "width": 2}
+            roi_hover_style = {"color": "#FFF73FFF", "width": 2}
+            handle_style = {"color": "#3FFF53FF", "width": 2}
+            handle_hover_style = {"color": "#FFF73FFF", "width": 2}
+
+            # define label style
+            label_color = "#3FFF53FF"
+            roi_name = "ROI 0"
+
+            new_roi = pg.RectROI(
+                pos=[0, 0],
+                size=[50, 50],
+                rotatable=False,
+                pen=roi_style,
+                hoverPen=roi_hover_style,
+                handlePen=handle_style,
+                handleHoverPen=handle_hover_style,
+            )
+
+            # add scale handles
+            for pos in ([1, 0.5], [0, 0.5], [0.5, 0], [0.5, 1]):
+                new_roi.addScaleHandle(pos=pos, center=[0.5, 0.5])
+            for pos, center in zip(
+                ([0, 0], [1, 0], [1, 1], [0, 1]), ([1, 1], [0, 1], [0, 0], [1, 0])
+            ):
+                new_roi.addScaleHandle(pos=pos, center=center)
+
+            # add a label
+            new_roi.label_color = label_color
+            roi_label = pg.TextItem(roi_name, color=label_color)
+            roi_label.setPos(0, 0)
+            new_roi.label = roi_label  # link to roi !!
+            new_roi.name = roi_name
+
+            new_roi.sigRegionChanged.connect(_roi_changed)
+
+            # add to current plot
+            self.display.image_plot.addItem(new_roi)
+            self.display.image_plot.addItem(roi_label)
+            self.display.roi_list[roi_name] = new_roi
+
+            # add the ROI to the RoiComboBox
+            self.selectRoiComboBox.addItem(roi_name)
+
         if ROI1["enabled"]:
             (X_ROI1, Y_ROI1, T_ROI1) = ROI_data(ROI1, X, Y, T)
             to_mcp_dictionary.append(
@@ -365,3 +427,11 @@ def main(self):
 
         with open(str(file_name) + ".json", "w", encoding="utf-8") as file:
             json.dump(to_mcp_dictionary, file, ensure_ascii=False, indent=4)
+
+        fitting.batchFitData(self)
+
+
+# quickplotrefreshMetaDataList(self)
+# advancedplotrefreshMetaDataList(self)
+# advancedplotrefreshMetadataLivePlot(self)
+# correlationsrefreshMetaDataList(self)
