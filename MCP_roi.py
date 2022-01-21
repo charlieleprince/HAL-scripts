@@ -13,16 +13,7 @@ from PyQt5.QtWidgets import QInputDialog
 from PyQt5.QtCore import Qt
 from PyQt5 import QtCore
 from HAL.gui.dataexplorer import getSelectionMetaDataFromCache
-import HAL.gui.fitting as fitting
-import pyqtgraph as pg
-from HAL.classes.display.abstractImage import AbstractImageDisplay
 
-# from HAL.gui.quickplot import refreshMetaDataList as quickplotrefreshMetaDataList
-# from HAL.gui.advancedplot import refreshMetaDataList as advancedplotrefreshMetaDataList
-# from HAL.gui.advancedplot import (
-#    refreshMetadataLivePlot as advancedplotrefreshMetadataLivePlot,
-# )
-# from HAL.gui.correlations import refreshMetaDataList as correlationsrefreshMetaDataList
 import json
 
 logger = logging.getLogger(__name__)
@@ -161,6 +152,7 @@ def main(self):
 
     fig, ax = plt.subplots(2, 1, gridspec_kw={"height_ratios": [3, 1]}, figsize=(6, 8))
     plotfigs(ax, X, Y, T)
+
     col1 = [
         [sg.Checkbox("ROI::0", default=True, key="ROI0", text_color="orange")],
         [
@@ -321,7 +313,7 @@ def main(self):
         to_mcp_dictionary = []
         to_mcp_dictionary.append(
             {
-                "name": "Ntot",
+                "name": "N_tot",
                 "value": len(X),
                 "diplay": "%o",
                 "unit": "",
@@ -333,71 +325,19 @@ def main(self):
             (X_ROI0, Y_ROI0, T_ROI0) = ROI_data(ROI0, X, Y, T)
             to_mcp_dictionary.append(
                 {
-                    "name": "ROI 0::N",
+                    "name": "N_ROI0",
                     "value": len(X_ROI0),
                     "diplay": "%o",
                     "unit": "",
                     "comment": "",
                 }
             )
-            # HAL display starts now
-            # fitting.addROI(self)
-
-            roi_style = {"color": "#3FFF53FF", "width": 2}
-            roi_hover_style = {"color": "#FFF73FFF", "width": 2}
-            handle_style = {"color": "#3FFF53FF", "width": 2}
-            handle_hover_style = {"color": "#FFF73FFF", "width": 2}
-
-            # define label style
-            label_color = "#3FFF53FF"
-            roi_name = "ROI 0"
-
-            # fix me: the position and sizes are given so that it works
-            # well on the HAL display, however for now the values do not
-            # correspond to any calibrated length
-            new_roi = pg.RectROI(
-                pos=[ROI0["Xmin"] * 10 + 400, ROI0["Ymin"] * 10 + 400],
-                size=[
-                    ROI0["Xmax"] * 10 - ROI0["Xmin"] * 10,
-                    ROI0["Ymax"] * 10 - ROI0["Ymin"] * 10,
-                ],
-                rotatable=False,
-                pen=roi_style,
-                hoverPen=roi_hover_style,
-                handlePen=handle_style,
-                handleHoverPen=handle_hover_style,
-            )
-
-            # add scale handles
-            # for pos in ([1, 0.5], [0, 0.5], [0.5, 0], [0.5, 1]):
-            #    new_roi.addScaleHandle(pos=pos, center=[0.5, 0.5])
-            # for pos, center in zip(
-            #    ([0, 0], [1, 0], [1, 1], [0, 1]), ([1, 1], [0, 1], [0, 0], [1, 0])
-            # ):
-            #    new_roi.addScaleHandle(pos=pos, center=center)
-
-            # add a label
-            new_roi.label_color = label_color
-            roi_label = pg.TextItem(roi_name, color=label_color)
-            roi_label.setPos(0, 0)
-            new_roi.label = roi_label  # link to roi !!
-            new_roi.name = roi_name
-
-            new_roi.sigRegionChanged.connect(_roi_changed)
-
-            # add to current plot
-            self.display.image_plot.addItem(new_roi)
-            self.display.image_plot.addItem(roi_label)
-            self.display.roi_list[roi_name] = new_roi
-
-            # add the ROI to the RoiComboBox
-            self.selectRoiComboBox.addItem(roi_name)
 
         if ROI1["enabled"]:
             (X_ROI1, Y_ROI1, T_ROI1) = ROI_data(ROI1, X, Y, T)
             to_mcp_dictionary.append(
                 {
-                    "name": "ROI 1::N",
+                    "name": "N_ROI1",
                     "value": len(X_ROI1),
                     "diplay": "%o",
                     "unit": "",
@@ -408,7 +348,7 @@ def main(self):
             (X_ROI2, Y_ROI2, T_ROI2) = ROI_data(ROI2, X, Y, T)
             to_mcp_dictionary.append(
                 {
-                    "name": "ROI 2::N",
+                    "name": "N_ROI2",
                     "value": len(X_ROI2),
                     "diplay": "%o",
                     "unit": "",
@@ -419,7 +359,7 @@ def main(self):
             (X_ROI3, Y_ROI3, T_ROI3) = ROI_data(ROI3, X, Y, T)
             to_mcp_dictionary.append(
                 {
-                    "name": "ROI 3::N",
+                    "name": "N_ROI3",
                     "value": len(X_ROI3),
                     "diplay": "%o",
                     "unit": "",
@@ -433,11 +373,3 @@ def main(self):
 
         with open(str(file_name) + ".json", "w", encoding="utf-8") as file:
             json.dump(to_mcp_dictionary, file, ensure_ascii=False, indent=4)
-
-        fitting.batchFitData(self)
-
-
-# quickplotrefreshMetaDataList(self)
-# advancedplotrefreshMetaDataList(self)
-# advancedplotrefreshMetadataLivePlot(self)
-# correlationsrefreshMetaDataList(self)
