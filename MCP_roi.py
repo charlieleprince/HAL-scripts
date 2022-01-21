@@ -353,8 +353,8 @@ def main(self):
             roi_name = "ROI 0"
 
             new_roi = pg.RectROI(
-                pos=[0, 0],
-                size=[50, 50],
+                pos=[ROI0["Xmin"], ROI0["Ymin"]],
+                size=[ROI0["Xmax"] - ROI0["Xmin"], ROI0["Ymax"] - ROI0["Ymin"]],
                 rotatable=False,
                 pen=roi_style,
                 hoverPen=roi_hover_style,
@@ -363,12 +363,12 @@ def main(self):
             )
 
             # add scale handles
-            for pos in ([1, 0.5], [0, 0.5], [0.5, 0], [0.5, 1]):
-                new_roi.addScaleHandle(pos=pos, center=[0.5, 0.5])
-            for pos, center in zip(
-                ([0, 0], [1, 0], [1, 1], [0, 1]), ([1, 1], [0, 1], [0, 0], [1, 0])
-            ):
-                new_roi.addScaleHandle(pos=pos, center=center)
+            # for pos in ([1, 0.5], [0, 0.5], [0.5, 0], [0.5, 1]):
+            #    new_roi.addScaleHandle(pos=pos, center=[0.5, 0.5])
+            # for pos, center in zip(
+            #    ([0, 0], [1, 0], [1, 1], [0, 1]), ([1, 1], [0, 1], [0, 0], [1, 0])
+            # ):
+            #    new_roi.addScaleHandle(pos=pos, center=center)
 
             # add a label
             new_roi.label_color = label_color
