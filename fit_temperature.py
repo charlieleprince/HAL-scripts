@@ -99,4 +99,11 @@ def main(self):
         Text += "--------------\n"
         Text += f"s0x = {np.round(sigma_0x*1e6,1)} ± {2*np.round(std_err_sigma0x*1e6,1)} µm\n"
         Text += f"s0y = {np.round(sigma_0y*1e6,1)} ± {2*np.round(std_err_sigma0y*1e6,1)} µm\n"
+        Text += "--------------\n"
+        # xenics
+        pixel_size = 30  # µm
+        magnification_factor = 0.27
+        pixel_scale = 30 / 0.27
+        Text += f"s0x_px = {np.round(sigma_0x*1e6/pixel_scale,1)} ± {2*np.round(std_err_sigma0x*1e6/pixel_scale,1)} px\n"
+        Text += f"s0y_px = {np.round(sigma_0y*1e6/pixel_scale,1)} ± {2*np.round(std_err_sigma0y*1e6/pixel_scale,1)} px\n"
     self.metaDataText.setPlainText(Text)
