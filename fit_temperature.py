@@ -59,14 +59,14 @@ def main(self):
         sigma_vx_fit = np.sqrt(poptx[0])
         Tx_fit = m * sigma_vx_fit ** 2 / k_B
         std_err_sigma_vx = np.sqrt(pcovx[0][0])
-        std_err_Tx = m * (std_err_sigma_vx ** 2) / k_B
+        std_err_Tx = m * (std_err_sigma_vx) / k_B
         sigma_0x = np.sqrt(poptx[1])
         std_err_sigma0x = np.sqrt(pcovx[1][1]) / (2 * np.sqrt(poptx[1]))
         # y
         sigma_vy_fit = np.sqrt(popty[0])
         Ty_fit = m * sigma_vy_fit ** 2 / k_B
         std_err_sigma_vy = np.sqrt(pcovy[0][0])
-        std_err_Ty = m * (std_err_sigma_vy ** 2) / k_B
+        std_err_Ty = m * (std_err_sigma_vy) / k_B
         sigma_0y = np.sqrt(popty[1])
         std_err_sigma0y = np.sqrt(pcovy[1][1]) / (2 * np.sqrt(popty[1]))
         # plot fit results:
@@ -96,7 +96,7 @@ def main(self):
         Text = "[fit results]\n"
         Text += f"Tx = {np.round(Tx_fit*1e6,2)} ± {2*np.round(std_err_Tx*1e6,2)} µK\n"
         Text += f"Ty = {np.round(Ty_fit*1e6,2)} ± {2*np.round(std_err_Ty*1e6,2)} µK\n"
-        Text += "--------------"
-        Text += f"s0x = {np.round(sigma_0x,1)} ± {2*np.round(std_err_sigma0x,1)} m\n"
-        Text += f"s0y = {np.round(sigma_0y,1)} ± {2*np.round(std_err_sigma0y,1)} m\n"
+        Text += "--------------\n"
+        Text += f"s0x = {np.round(sigma_0x*1e6,1)} ± {2*np.round(std_err_sigma0x*1e6,1)} µm\n"
+        Text += f"s0y = {np.round(sigma_0y*1e6,1)} ± {2*np.round(std_err_sigma0y*1e6,1)} µm\n"
     self.metaDataText.setPlainText(Text)
