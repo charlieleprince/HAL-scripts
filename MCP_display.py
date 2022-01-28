@@ -44,23 +44,15 @@ def main(self):
     data.path = item.data(QtCore.Qt.UserRole)
     X, Y, T = data.getrawdata()
 
-    T_min_ROI = 150
-    T_max_ROI = 165
-    T_ROI = T[(T > T_min_ROI) & (T < T_max_ROI)]
-    X_ROI = X[(T > T_min_ROI) & (T < T_max_ROI)]
-    Y_ROI = Y[(T > T_min_ROI) & (T < T_max_ROI)]
-
     fig1 = plt.figure()
     ax = plt.axes(projection="3d")
     ax.scatter3D(X, Y, T, marker=".")
-    ax.scatter3D(X_ROI, Y_ROI, T_ROI, marker=".")
     plt.xlabel("X")
     plt.ylabel("Y")
     fig1.show()
 
     fig2 = plt.figure()
     plt.hist(T, bins=np.linspace(0, 180, 300))
-    # plt.hist(T_ROI,bins=np.linspace(0,180,300))
     plt.xlabel("time (ms)")
     plt.ylabel("number of events")
     plt.grid(True)
