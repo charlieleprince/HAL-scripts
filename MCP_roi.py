@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 # /!\/!\/!\
 # in order to be imported as a user script, two "global" variables
 # have to be defined: NAME and CATEGORY
-NAME = "ROI"  # display name, used in menubar and command palette
+NAME = "choose ROI"  # display name, used in menubar and command palette
 CATEGORY = "MCP"  # category (note that CATEGORY="" is a valid choice)
 
 # layout tools
@@ -112,6 +112,63 @@ def ROI_data(ROI, X, Y, T):
     X_ROI = X[ROI_indices]
     Y_ROI = Y[ROI_indices]
     return (X_ROI, Y_ROI, T_ROI)
+
+
+def exportROIinfo(to_mcp, ROI):
+    to_mcp.append(
+        {
+            "name": "ROI0:Xmin",
+            "value": ROI["Xmin"],
+            "diplay": "%o",
+            "unit": "",
+            "comment": "",
+        }
+    )
+    to_mcp.append(
+        {
+            "name": "ROI0:Xmax",
+            "value": ROI["Xmax"],
+            "diplay": "%o",
+            "unit": "",
+            "comment": "",
+        }
+    )
+    to_mcp.append(
+        {
+            "name": "ROI0:Ymin",
+            "value": ROI["Ymin"],
+            "diplay": "%o",
+            "unit": "",
+            "comment": "",
+        }
+    )
+    to_mcp.append(
+        {
+            "name": "ROI0:Ymax",
+            "value": ROI["Ymax"],
+            "diplay": "%o",
+            "unit": "",
+            "comment": "",
+        }
+    )
+    to_mcp.append(
+        {
+            "name": "ROI0:Tmin",
+            "value": ROI["Tmin"],
+            "diplay": "%o",
+            "unit": "",
+            "comment": "",
+        }
+    )
+    to_mcp.append(
+        {
+            "name": "ROI0:Tmax",
+            "value": ROI["Tmax"],
+            "diplay": "%o",
+            "unit": "",
+            "comment": "",
+        }
+    )
 
 
 def _roi_changed(self):
@@ -323,6 +380,8 @@ def main(self):
 
         if ROI0["enabled"]:
             (X_ROI0, Y_ROI0, T_ROI0) = ROI_data(ROI0, X, Y, T)
+
+            exportROIinfo(to_mcp_dictionary, ROI0)
             to_mcp_dictionary.append(
                 {
                     "name": "N_ROI0",
@@ -335,6 +394,7 @@ def main(self):
 
         if ROI1["enabled"]:
             (X_ROI1, Y_ROI1, T_ROI1) = ROI_data(ROI1, X, Y, T)
+            exportROIinfo(to_mcp_dictionary, ROI1)
             to_mcp_dictionary.append(
                 {
                     "name": "N_ROI1",
@@ -346,6 +406,7 @@ def main(self):
             )
         if ROI2["enabled"]:
             (X_ROI2, Y_ROI2, T_ROI2) = ROI_data(ROI2, X, Y, T)
+            exportROIinfo(to_mcp_dictionary, ROI2)
             to_mcp_dictionary.append(
                 {
                     "name": "N_ROI2",
@@ -357,6 +418,7 @@ def main(self):
             )
         if ROI3["enabled"]:
             (X_ROI3, Y_ROI3, T_ROI3) = ROI_data(ROI3, X, Y, T)
+            exportROIinfo(to_mcp_dictionary, ROI3)
             to_mcp_dictionary.append(
                 {
                     "name": "N_ROI3",
