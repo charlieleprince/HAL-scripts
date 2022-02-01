@@ -52,7 +52,7 @@ def main(self):
     fig1.show()
 
     fig2 = plt.figure()
-    plt.hist(T, bins=np.linspace(0, 180, 300))
+    plt.hist(T, bins=np.linspace(0, np.max(T), 300))
     plt.xlabel("time (ms)")
     plt.ylabel("number of events")
     plt.grid(True)
