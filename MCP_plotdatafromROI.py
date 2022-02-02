@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 # /!\/!\/!\
 # in order to be imported as a user script, two "global" variables
 # have to be defined: NAME and CATEGORY
-NAME = "watch ROI"  # display name, used in menubar and command palette
+NAME = "plot data from ROI"  # display name, used in menubar and command palette
 CATEGORY = "MCP"  # category (note that CATEGORY="" is a valid choice)
 
 
@@ -60,7 +60,7 @@ def plotfigs(ax, X, Y, T):
     ax[0].hist2d(X, Y, bins=np.linspace(-40, 40, 2 * 81), cmap=plt.cm.jet)
     ax[0].set_xlabel("X")
     ax[0].set_ylabel("Y")
-    ax[0].grid(True)
+    ax[0].grid(False)
     ax[1].hist(T, bins=np.linspace(0, np.max(T), 300), color="tab:blue")
     ax[1].set_xlabel("time (ms)")
     ax[1].set_ylabel("number of events")
@@ -88,6 +88,32 @@ def displayROIs(ax, color, metadata, ROI_name, nb):
     ax[1].axvspan(Tmin, Tmax, alpha=0.2, color=color)
 
 
+def ROIdata(metadata, nb, X, Y, T):
+    (Xmin, Xmax, Ymin, Ymax, Tmin, Tmax) = read_metadata(metadata, nb)
+    T_ROI = T[
+        (T > Tmin) & (T < Tmax) & (X > Xmin) & (X < Xmax) & (Y > Ymin) & (Y < Ymax)
+    ]
+    X_ROI = X[
+        (T > Tmin)
+        & (T < Tmax)
+        & (X > Xmin)
+        & (X < Xmax)
+        & (X < Xmax)
+        & (Y > Ymin)
+        & (Y < Ymax)
+    ]
+    Y_ROI = Y[
+        (T > Tmin)
+        & (T < Tmax)
+        & (X > Xmin)
+        & (X < Xmax)
+        & (X < Xmax)
+        & (Y > Ymin)
+        & (Y < Ymax)
+    ]
+    return (X_ROI, Y_ROI, T_ROI)
+
+
 def main(self):
     """
     the script also have to define a `main` function. When playing a script,
@@ -111,32 +137,59 @@ def main(self):
     data.path = item.data(QtCore.Qt.UserRole)
     X, Y, T = data.getrawdata()
 
-    fig2D, ax2D = plt.subplots(
-        2, 1, gridspec_kw={"height_ratios": [3, 1]}, figsize=(6, 8)
-    )
-    plotfigs(ax2D, X, Y, T)
-
-    fig1 = plt.figure()
-    ax = plt.axes(projection="3d")
-    ax.scatter3D(X, Y, T, marker=".")
-    plt.xlabel("X")
-    plt.ylabel("Y")
     if "N_ROI0" in metadata["current selection"]["mcp"]:
-        color = "tab:orange"
-        addROI(metadata, ax, "0", color)
-        displayROIs(ax2D, color, metadata, "ROI::0", "0")
-    if "N_ROI1" in metadata["current selection"]["mcp"]:
-        color = "tab:green"
-        addROI(metadata, ax, "1", color)
-        displayROIs(ax2D, color, metadata, "ROI::1", "1")
-    if "N_ROI2" in metadata["current selection"]["mcp"]:
-        color = "tab:red"
-        addROI(metadata, ax, "2", color)
-        displayROIs(ax2D, color, metadata, "ROI::2", "2")
-    if "N_ROI3" in metadata["current selection"]["mcp"]:
-        color = "tab:purple"
-        addROI(metadata, ax, "3", color)
-        displayROIs(ax2D, color, metadata, "ROI::3", "3")
+        (X_ROI, Y_ROI, T_ROI) = ROIdata(metadata, "0", X, Y, T)
+        fig2D0, ax2D0 = plt.subplots(
+            2, 1, gridspec_kw={"height_ratios": [3, 1]}, figsize=(6, 8)
+        )
+        plotfigs(ax2D0, X_ROI, Y_ROI, T_ROI)
 
-    fig1.show()
-    fig2D.show()
+        fig0 = plt.figure()
+        ax0 = plt.axes(projection="3d")
+        ax0.scatter3D(X_ROI, Y_ROI, T_ROI, marker=".")
+        plt.xlabel("X")
+        plt.ylabel("Y")
+        fig0.show()
+        fig2D0.show()
+    if "N_ROI1" in metadata["current selection"]["mcp"]:
+        (X_ROI, Y_ROI, T_ROI) = ROIdata(metadata, "1", X, Y, T)
+        fig2D1, ax2D1 = plt.subplots(
+            2, 1, gridspec_kw={"height_ratios": [3, 1]}, figsize=(6, 8)
+        )
+        plotfigs(ax2D1, X_ROI, Y_ROI, T_ROI)
+
+        fig1 = plt.figure()
+        ax1 = plt.axes(projection="3d")
+        ax1.scatter3D(X_ROI, Y_ROI, T_ROI, marker=".")
+        plt.xlabel("X")
+        plt.ylabel("Y")
+        fig1.show()
+        fig2D1.show()
+    if "N_ROI2" in metadata["current selection"]["mcp"]:
+        (X_ROI, Y_ROI, T_ROI) = ROIdata(metadata, "2", X, Y, T)
+        fig2D2, ax2D2 = plt.subplots(
+            2, 1, gridspec_kw={"height_ratios": [3, 1]}, figsize=(6, 8)
+        )
+        plotfigs(ax2D2, X_ROI, Y_ROI, T_ROI)
+
+        fig2 = plt.figure()
+        ax2 = plt.axes(projection="3d")
+        ax2.scatter3D(X_ROI, Y_ROI, T_ROI, marker=".")
+        plt.xlabel("X")
+        plt.ylabel("Y")
+        fig2.show()
+        fig2D2.show()
+    if "N_ROI3" in metadata["current selection"]["mcp"]:
+        (X_ROI, Y_ROI, T_ROI) = ROIdata(metadata, "3", X, Y, T)
+        fig2D3, ax2D3 = plt.subplots(
+            2, 1, gridspec_kw={"height_ratios": [3, 1]}, figsize=(6, 8)
+        )
+        plotfigs(ax2D3, X_ROI, Y_ROI, T_ROI)
+
+        fig3 = plt.figure()
+        ax3 = plt.axes(projection="3d")
+        ax3.scatter3D(X_ROI, Y_ROI, T_ROI, marker=".")
+        plt.xlabel("X")
+        plt.ylabel("Y")
+        fig3.show()
+        fig2D3.show()
