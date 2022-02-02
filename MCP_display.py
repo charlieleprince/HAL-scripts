@@ -16,8 +16,8 @@ logger = logging.getLogger(__name__)
 # /!\/!\/!\
 # in order to be imported as a user script, two "global" variables
 # have to be defined: NAME and CATEGORY
-NAME = "1.a- Plot data from single file"  # display name, used in menubar and command palette
-CATEGORY = "MCP"  # category (note that CATEGORY="" is a valid choice)
+NAME = "1. Plot data"  # display name, used in menubar and command palette
+CATEGORY = "MCP - single file"  # category (note that CATEGORY="" is a valid choice)
 
 
 def main(self):

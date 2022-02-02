@@ -19,8 +19,8 @@ logger = logging.getLogger(__name__)
 # /!\/!\/!\
 # in order to be imported as a user script, two "global" variables
 # have to be defined: NAME and CATEGORY
-NAME = "1.c- Watch existing ROI for the selected file"  # display name, used in menubar and command palette
-CATEGORY = "MCP"  # category (note that CATEGORY="" is a valid choice)
+NAME = "3. Watch ROI"  # display name, used in menubar and command palette
+CATEGORY = "MCP - single file"  # category (note that CATEGORY="" is a valid choice)
 
 
 def read_metadata(metadata, nb):
