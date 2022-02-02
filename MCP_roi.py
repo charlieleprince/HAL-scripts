@@ -13,6 +13,7 @@ from PyQt5.QtWidgets import QInputDialog
 from PyQt5.QtCore import Qt
 from PyQt5 import QtCore
 from HAL.gui.dataexplorer import getSelectionMetaDataFromCache
+from pathlib import Path
 
 import json
 
@@ -25,6 +26,44 @@ NAME = "choose ROI"  # display name, used in menubar and command palette
 CATEGORY = "MCP"  # category (note that CATEGORY="" is a valid choice)
 
 # layout tools
+
+
+EMPTY_DICT = {
+    "ROI 0": {
+        "Xmin": 0,
+        "Xmax": 0,
+        "Ymin": 0,
+        "Ymax": 0,
+        "Tmin": 0,
+        "Tmax": 0,
+    },
+    "ROI 1": {
+        "Xmin": 0,
+        "Xmax": 0,
+        "Ymin": 0,
+        "Ymax": 0,
+        "Tmin": 0,
+        "Tmax": 0,
+    },
+    "ROI 2": {
+        "Xmin": 0,
+        "Xmax": 0,
+        "Ymin": 0,
+        "Ymax": 0,
+        "Tmin": 0,
+        "Tmax": 0,
+    },
+    "ROI 3": {
+        "Xmin": 0,
+        "Xmax": 0,
+        "Ymin": 0,
+        "Ymax": 0,
+        "Tmin": 0,
+        "Tmax": 0,
+    },
+}
+
+
 def draw_figure(canvas, figure):
     figure_canvas_agg = FigureCanvasTkAgg(figure, canvas)
     figure_canvas_agg.draw()
@@ -205,6 +244,26 @@ def main(self):
     # get data
     X, Y, T = data.getrawdata()
 
+    # default ROI
+
+    root = Path().home()
+    default_roi_dir = root / ".HAL"
+    default_roi_file_name = default_roi_dir / "default_mcp_roi.json"
+
+    if not default_roi_file_name.is_file():
+        default_roi_dict = {
+            "ROI 0": {"Xmin": 0, "Xmax": 0, "Ymin": 0, "Ymax": 0, "Tmin": 0, "Tmax": 0},
+            "ROI 1": {"Xmin": 0, "Xmax": 0, "Ymin": 0, "Ymax": 0, "Tmin": 0, "Tmax": 0},
+            "ROI 2": {"Xmin": 0, "Xmax": 0, "Ymin": 0, "Ymax": 0, "Tmin": 0, "Tmax": 0},
+            "ROI 3": {"Xmin": 0, "Xmax": 0, "Ymin": 0, "Ymax": 0, "Tmin": 0, "Tmax": 0},
+        }
+        default_roi_file_name = default_roi_dir / "default_mcp_roi.json"
+        with open(default_roi_file_name, "w", encoding="utf-8") as file:
+            json.dump(default_roi_dict, file, ensure_ascii=False, indent=4)
+    with open(default_roi_file_name, encoding="utf8") as f:
+        defaultroi = json.load(f)
+        print(defaultroi)
+
     # gui layout
 
     fig, ax = plt.subplots(2, 1, gridspec_kw={"height_ratios": [3, 1]}, figsize=(6, 8))
@@ -214,80 +273,133 @@ def main(self):
         [sg.Checkbox("ROI::0", default=True, key="ROI0", text_color="orange")],
         [
             sg.Text("Tmin"),
-            sg.Input(size=(16, 1), default_text="150", key="Tmin0"),
+            sg.Input(
+                size=(16, 1), default_text=str(defaultroi["ROI 0"]["Tmin"]), key="Tmin0"
+            ),
             sg.Text("Tmax"),
-            sg.Input(size=(16, 1), default_text="165", key="Tmax0"),
+            sg.Input(
+                size=(16, 1), default_text=str(defaultroi["ROI 0"]["Tmax"]), key="Tmax0"
+            ),
         ],
         [
             sg.Text("Xmin"),
-            sg.Input(size=(16, 1), default_text="-15", key="Xmin0"),
+            sg.Input(
+                size=(16, 1), default_text=str(defaultroi["ROI 0"]["Xmin"]), key="Xmin0"
+            ),
             sg.Text("Xmax"),
-            sg.Input(size=(16, 1), default_text="-10", key="Xmax0"),
+            sg.Input(
+                size=(16, 1), default_text=str(defaultroi["ROI 0"]["Xmax"]), key="Xmax0"
+            ),
         ],
         [
             sg.Text("Ymin"),
-            sg.Input(size=(16, 1), default_text="-12", key="Ymin0"),
+            sg.Input(
+                size=(16, 1), default_text=str(defaultroi["ROI 0"]["Ymin"]), key="Ymin0"
+            ),
             sg.Text("Ymax"),
-            sg.Input(size=(16, 1), default_text="15", key="Ymax0"),
+            sg.Input(
+                size=(16, 1), default_text=str(defaultroi["ROI 0"]["Ymax"]), key="Ymax0"
+            ),
         ],
         [sg.Checkbox("ROI::1", default=False, key="ROI1", text_color="darkgreen")],
         [
             sg.Text("Tmin"),
-            sg.Input(size=(16, 1), default_text="100", key="Tmin1"),
+            sg.Input(
+                size=(16, 1), default_text=str(defaultroi["ROI 1"]["Tmin"]), key="Tmin1"
+            ),
             sg.Text("Tmax"),
-            sg.Input(size=(16, 1), default_text="125", key="Tmax1"),
+            sg.Input(
+                size=(16, 1), default_text=str(defaultroi["ROI 1"]["Tmax"]), key="Tmax1"
+            ),
         ],
         [
             sg.Text("Xmin"),
-            sg.Input(size=(16, 1), default_text="-10", key="Xmin1"),
+            sg.Input(
+                size=(16, 1), default_text=str(defaultroi["ROI 1"]["Xmin"]), key="Xmin1"
+            ),
             sg.Text("Xmax"),
-            sg.Input(size=(16, 1), default_text="0", key="Xmax1"),
+            sg.Input(
+                size=(16, 1), default_text=str(defaultroi["ROI 1"]["Xmax"]), key="Xmax1"
+            ),
         ],
         [
             sg.Text("Ymin"),
-            sg.Input(size=(16, 1), default_text="-30", key="Ymin1"),
+            sg.Input(
+                size=(16, 1), default_text=str(defaultroi["ROI 1"]["Ymin"]), key="Ymin1"
+            ),
             sg.Text("Ymax"),
-            sg.Input(size=(16, 1), default_text="-20", key="Ymax1"),
+            sg.Input(
+                size=(16, 1), default_text=str(defaultroi["ROI 1"]["Ymax"]), key="Ymax1"
+            ),
         ],
         [sg.Checkbox("ROI::2", default=False, key="ROI2", text_color="red")],
         [
             sg.Text("Tmin"),
-            sg.Input(size=(16, 1), key="Tmin2"),
+            sg.Input(
+                size=(16, 1), default_text=str(defaultroi["ROI 2"]["Tmin"]), key="Tmin2"
+            ),
             sg.Text("Tmax"),
-            sg.Input(size=(16, 1), key="Tmax2"),
+            sg.Input(
+                size=(16, 1), default_text=str(defaultroi["ROI 2"]["Tmax"]), key="Tmax2"
+            ),
         ],
         [
             sg.Text("Xmin"),
-            sg.Input(size=(16, 1), key="Xmin2"),
+            sg.Input(
+                size=(16, 1), default_text=str(defaultroi["ROI 2"]["Xmin"]), key="Xmin2"
+            ),
             sg.Text("Xmax"),
-            sg.Input(size=(16, 1), key="Xmax2"),
+            sg.Input(
+                size=(16, 1), default_text=str(defaultroi["ROI 2"]["Xmax"]), key="Xmax2"
+            ),
         ],
         [
             sg.Text("Ymin"),
-            sg.Input(size=(16, 1), key="Ymin2"),
+            sg.Input(
+                size=(16, 1), default_text=str(defaultroi["ROI 2"]["Ymin"]), key="Ymin2"
+            ),
             sg.Text("Ymax"),
-            sg.Input(size=(16, 1), key="Ymax2"),
+            sg.Input(
+                size=(16, 1), default_text=str(defaultroi["ROI 2"]["Ymax"]), key="Ymax2"
+            ),
         ],
         [sg.Checkbox("ROI::3", default=False, key="ROI3", text_color="purple")],
         [
             sg.Text("Tmin"),
-            sg.Input(size=(16, 1), key="Tmin3"),
+            sg.Input(
+                size=(16, 1), default_text=str(defaultroi["ROI 3"]["Tmin"]), key="Tmin3"
+            ),
             sg.Text("Tmax"),
-            sg.Input(size=(16, 1), key="Tmax3"),
+            sg.Input(
+                size=(16, 1), default_text=str(defaultroi["ROI 3"]["Tmax"]), key="Tmax3"
+            ),
         ],
         [
             sg.Text("Xmin"),
-            sg.Input(size=(16, 1), key="Xmin3"),
+            sg.Input(
+                size=(16, 1), default_text=str(defaultroi["ROI 3"]["Xmin"]), key="Xmin3"
+            ),
             sg.Text("Xmax"),
-            sg.Input(size=(16, 1), key="Xmax3"),
+            sg.Input(
+                size=(16, 1), default_text=str(defaultroi["ROI 3"]["Xmax"]), key="Xmax3"
+            ),
         ],
         [
             sg.Text("Ymin"),
-            sg.Input(size=(16, 1), key="Ymin3"),
+            sg.Input(
+                size=(16, 1), default_text=str(defaultroi["ROI 3"]["Ymin"]), key="Ymin3"
+            ),
             sg.Text("Ymax"),
-            sg.Input(size=(16, 1), key="Ymax3"),
+            sg.Input(
+                size=(16, 1), default_text=str(defaultroi["ROI 3"]["Ymax"]), key="Ymax3"
+            ),
         ],
-        [sg.Button("Ok"), sg.Button("Watch ROIs"), sg.Button("Cancel")],
+        [
+            sg.Button("Ok"),
+            sg.Button("Watch ROIs"),
+            sg.Button("Cancel"),
+            sg.Checkbox("Set to default", default=True, key="set to default"),
+        ],
     ]
 
     col2 = [[sg.Canvas(key="-CANVAS-")]]
@@ -345,6 +457,14 @@ def main(self):
             fig_agg.draw()
 
         if event == "Ok":
+            if values["set to default"]:
+                new_dict = EMPTY_DICT
+                setROIvalues(new_dict["ROI 0"], values, "0")
+                setROIvalues(new_dict["ROI 1"], values, "1")
+                setROIvalues(new_dict["ROI 2"], values, "2")
+                setROIvalues(new_dict["ROI 3"], values, "3")
+                with open(default_roi_file_name, "w", encoding="utf-8") as file:
+                    json.dump(new_dict, file, ensure_ascii=False, indent=4)
             get_enabled_rois(ROI0, ROI1, ROI2, ROI3, values)
             if ROI0["enabled"]:
                 setROIvalues(ROI0, values, "0")
@@ -428,10 +548,8 @@ def main(self):
                     "comment": "",
                 }
             )
-
         MCP_stats_folder = data.path.parent / ".MCPstats"
         MCP_stats_folder.mkdir(exist_ok=True)
         file_name = MCP_stats_folder / data.path.stem
-
         with open(str(file_name) + ".json", "w", encoding="utf-8") as file:
             json.dump(to_mcp_dictionary, file, ensure_ascii=False, indent=4)
