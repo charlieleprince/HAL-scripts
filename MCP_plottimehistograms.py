@@ -46,11 +46,14 @@ def main(self):
     for k in range(len(selection)):
         item = selection[k]
         data.path = item.data(QtCore.Qt.UserRole)
+        cycle = int(str(data.path.stem).split("_")[1])
         if not data.path.suffix == ".atoms":
             return
         # get data
         X, Y, T = data.getrawdata()
         axs[k].hist(T, bins=np.linspace(0, np.max(T), 300), color="tab:blue")
+        axs[k].yaxis.set_label_position("right")
+        axs[k].set_ylabel(cycle)
 
     # fig.tight_layout()
     fig.supxlabel("Time (ms)")
