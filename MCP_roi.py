@@ -474,7 +474,7 @@ def main(self):
             if ROI3["enabled"]:
                 setROIvalues(ROI3, values, "3")
             break
-
+    plt.close()
     window.close()
     # now the ROIs are set
 
