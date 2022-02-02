@@ -262,7 +262,6 @@ def main(self):
             json.dump(default_roi_dict, file, ensure_ascii=False, indent=4)
     with open(default_roi_file_name, encoding="utf8") as f:
         defaultroi = json.load(f)
-        print(defaultroi)
 
     # gui layout
 
