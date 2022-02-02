@@ -16,7 +16,9 @@ logger = logging.getLogger(__name__)
 # /!\/!\/!\
 # in order to be imported as a user script, two "global" variables
 # have to be defined: NAME and CATEGORY
-NAME = "combine"  # display name, used in menubar and command palette
+NAME = (
+    "2.c- Combine selected files"  # display name, used in menubar and command palette
+)
 CATEGORY = "MCP"  # category (note that CATEGORY="" is a valid choice)
 
 
