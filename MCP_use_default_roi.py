@@ -43,7 +43,7 @@ def exportROIinfo(to_mcp, ROI, nb):
         {
             "name": "--ROI" + str(nb) + ":Xmin",
             "value": ROI["Xmin"],
-            "diplay": "%o",
+            "display": "%.3g",
             "unit": "",
             "comment": "",
         }
@@ -52,7 +52,7 @@ def exportROIinfo(to_mcp, ROI, nb):
         {
             "name": "--ROI" + str(nb) + ":Xmax",
             "value": ROI["Xmax"],
-            "diplay": "%o",
+            "display": "%.3g",
             "unit": "",
             "comment": "",
         }
@@ -61,7 +61,7 @@ def exportROIinfo(to_mcp, ROI, nb):
         {
             "name": "--ROI" + str(nb) + ":Ymin",
             "value": ROI["Ymin"],
-            "diplay": "%o",
+            "display": "%.3g",
             "unit": "",
             "comment": "",
         }
@@ -70,7 +70,7 @@ def exportROIinfo(to_mcp, ROI, nb):
         {
             "name": "--ROI" + str(nb) + ":Ymax",
             "value": ROI["Ymax"],
-            "diplay": "%o",
+            "display": "%.3g",
             "unit": "",
             "comment": "",
         }
@@ -79,7 +79,7 @@ def exportROIinfo(to_mcp, ROI, nb):
         {
             "name": "--ROI" + str(nb) + ":Tmin",
             "value": ROI["Tmin"],
-            "diplay": "%o",
+            "display": "%.3g",
             "unit": "",
             "comment": "",
         }
@@ -88,7 +88,7 @@ def exportROIinfo(to_mcp, ROI, nb):
         {
             "name": "--ROI" + str(nb) + ":Tmax",
             "value": ROI["Tmax"],
-            "diplay": "%o",
+            "display": "%.3g",
             "unit": "",
             "comment": "",
         }
@@ -169,7 +169,7 @@ def main(self):
             {
                 "name": "N_tot",
                 "value": len(X),
-                "diplay": "%o",
+                "display": "%o",
                 "unit": "",
                 "comment": "",
             }
@@ -182,7 +182,7 @@ def main(self):
             {
                 "name": "N_ROI0",
                 "value": len(X_ROI0),
-                "diplay": "%o",
+                "display": "%o",
                 "unit": "",
                 "comment": "",
             }
