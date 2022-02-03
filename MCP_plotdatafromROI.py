@@ -61,7 +61,7 @@ def plotfigs(ax, X, Y, T):
     ax[0].set_xlabel("X")
     ax[0].set_ylabel("Y")
     ax[0].grid(False)
-    ax[1].hist(T, bins=np.linspace(0, np.max(T), 300), color="tab:blue")
+    ax[1].hist(T, bins=np.linspace(np.min(T), np.max(T), 300), color="tab:blue")
     ax[1].set_xlabel("time (ms)")
     ax[1].set_ylabel("number of events")
 
