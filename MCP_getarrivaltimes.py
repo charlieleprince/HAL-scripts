@@ -194,9 +194,9 @@ def main(self):
 
         current_mcp_metadata.append(
             {
-                "name": "Arrival_time_ROI0",
+                "name": "ROI0 arrival time",
                 "value": popt[0],
-                "display": "%.3g",
+                "display": "%.2f",
                 "unit": "ms",
                 "comment": "",
             }
