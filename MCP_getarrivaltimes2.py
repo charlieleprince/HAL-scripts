@@ -21,8 +21,13 @@ logger = logging.getLogger(__name__)
 # /!\/!\/!\
 # in order to be imported as a user script, two "global" variables
 # have to be defined: NAME and CATEGORY
-NAME = "5. Get R0I0 arrival times"  # display name, used in menubar and command palette
+NAME = "5. Get R0I0 arrival times and temperatures"  # display name, used in menubar and command palette
 CATEGORY = "MCP"  # category (note that CATEGORY="" is a valid choice)
+
+
+k_B = 1.3806e-23
+m = 4 * 1.68e-27
+g = 9.81
 
 
 def read_metadata(metadata, nb):
@@ -108,6 +113,8 @@ def main(self):
 
             (popt, pcov) = fit_time_histo(T_ROI)
 
+            Temperature_t = m * (g ** 2) * ((popt[2]) ** 2) / k_B  # µK
+
             MCP_stats_folder = data.path.parent / ".MCPstats"
             MCP_stats_folder.mkdir(exist_ok=True)
             file_name = MCP_stats_folder / data.path.stem
@@ -129,6 +136,15 @@ def main(self):
                     "value": popt[2] * 1e3,
                     "display": "%.2f",
                     "unit": "µs",
+                    "comment": "",
+                }
+            )
+            current_mcp_metadata.append(
+                {
+                    "name": "ROI0 temperature",
+                    "value": Temperature_t,
+                    "display": "%.2f",
+                    "unit": "µK",
                     "comment": "",
                 }
             )

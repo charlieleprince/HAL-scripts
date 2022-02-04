@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 # /!\/!\/!\
 # in order to be imported as a user script, two "global" variables
 # have to be defined: NAME and CATEGORY
-NAME = "4. Get R0I0 arrival time"  # display name, used in menubar and command palette
+NAME = "4. Get R0I0 arrival time and temperature"  # display name, used in menubar and command palette
 CATEGORY = "MCP - single file"  # category (note that CATEGORY="" is a valid choice)
 
 
@@ -213,10 +213,19 @@ def main(self):
         )
         current_mcp_metadata.append(
             {
-                "name": "ROI0 time width",
-                "value": popt[2] * 1e3,
+                "name": "ROI0 sigma t",
+                "value": popt[2],
                 "display": "%.2f",
-                "unit": "µs",
+                "unit": "ms",
+                "comment": "",
+            }
+        )
+        current_mcp_metadata.append(
+            {
+                "name": "ROI0 temperature",
+                "value": Temperature_t,
+                "display": "%.2f",
+                "unit": "µK",
                 "comment": "",
             }
         )
