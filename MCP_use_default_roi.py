@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 # /!\/!\/!\
 # in order to be imported as a user script, two "global" variables
 # have to be defined: NAME and CATEGORY
-NAME = "2. Export ROI info using default ROI0"  # display name, used in menubar and command palette
+NAME = "2. Export ROI info to metadata using default ROI0"  # display name, used in menubar and command palette
 CATEGORY = "MCP"  # category (note that CATEGORY="" is a valid choice)
 
 # layout tools

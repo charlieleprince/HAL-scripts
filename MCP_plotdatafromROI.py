@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 # /!\/!\/!\
 # in order to be imported as a user script, two "global" variables
 # have to be defined: NAME and CATEGORY
-NAME = "2. Plot data from ROI only"  # display name, used in menubar and command palette
+NAME = "2. Plot histogram data from ROI only"  # display name, used in menubar and command palette
 CATEGORY = "MCP - single file"  # category (note that CATEGORY="" is a valid choice)
 
 
