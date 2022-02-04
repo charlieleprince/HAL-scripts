@@ -64,6 +64,15 @@ EMPTY_DICT = {
 }
 
 
+def plot_unreconstructed_data(T_raw):
+
+    bin_heights_raw, bin_borders_raw, _ = plt.hist(
+        T_raw, bins=np.linspace(np.min(T_raw), np.max(T_raw), 300)
+    )
+    bin_centers_raw = bin_borders_raw[:-1] + np.diff(bin_borders_raw) / 2
+    return (bin_centers_raw, bin_heights_raw)
+
+
 def draw_figure(canvas, figure):
     figure_canvas_agg = FigureCanvasTkAgg(figure, canvas)
     figure_canvas_agg.draw()
@@ -71,12 +80,14 @@ def draw_figure(canvas, figure):
     return figure_canvas_agg
 
 
-def plotfigs(ax, X, Y, T):
+def plotfigs(ax, X, Y, T, T_raw):
+    (bin_centers_raw, bin_heights_raw) = plot_unreconstructed_data(T_raw)
     ax[0].hist2d(X, Y, bins=np.linspace(-40, 40, 2 * 81), cmap=plt.cm.jet)
     ax[0].set_xlabel("X")
     ax[0].set_ylabel("Y")
     ax[0].grid(True)
     ax[1].hist(T, bins=np.linspace(0, np.max(T), 300), color="tab:blue")
+    ax[1].plot(bin_centers_raw, bin_heights_raw, linestyle="dotted", color="black")
     ax[1].set_xlabel("time (ms)")
     ax[1].set_ylabel("number of events")
 
@@ -243,7 +254,7 @@ def main(self):
         return
     # get data
     X, Y, T = data.getrawdata()
-
+    T_raw = data.getdatafromsingleline()
     # default ROI
 
     root = Path().home()
@@ -266,7 +277,7 @@ def main(self):
     # gui layout
 
     fig, ax = plt.subplots(2, 1, gridspec_kw={"height_ratios": [3, 1]}, figsize=(6, 8))
-    plotfigs(ax, X, Y, T)
+    plotfigs(ax, X, Y, T, T_raw)
 
     col1 = [
         [sg.Checkbox("ROI::0", default=True, key="ROI0", text_color="orange")],
@@ -436,22 +447,22 @@ def main(self):
             if values["ROI0"]:
                 setROIvalues(ROI0, values, "0")
                 color = "tab:orange"
-                plotfigs(ax, X, Y, T)
+                plotfigs(ax, X, Y, T, T_raw)
                 displayROIs(ax, color, ROI0, "ROI::0", values, "0")
             if values["ROI1"]:
                 setROIvalues(ROI1, values, "1")
                 color = "tab:green"
-                plotfigs(ax, X, Y, T)
+                plotfigs(ax, X, Y, T, T_raw)
                 displayROIs(ax, color, ROI1, "ROI::1", values, "1")
             if values["ROI2"]:
                 setROIvalues(ROI2, values, "2")
                 color = "tab:red"
-                plotfigs(ax, X, Y, T)
+                plotfigs(ax, X, Y, T, T_raw)
                 displayROIs(ax, color, ROI2, "ROI::2", values, "2")
             if values["ROI3"]:
                 setROIvalues(ROI3, values, "3")
                 color = "tab:purple"
-                plotfigs(ax, X, Y, T)
+                plotfigs(ax, X, Y, T, T_raw)
                 displayROIs(ax, color, ROI3, "ROI::3", values, "3")
             fig_agg.draw()
 

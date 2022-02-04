@@ -30,6 +30,15 @@ m = 4 * 1.68e-27
 g = 9.81
 
 
+def plot_unreconstructed_data(T_raw):
+
+    bin_heights_raw, bin_borders_raw, _ = plt.hist(
+        T_raw, bins=np.linspace(np.min(T_raw), np.max(T_raw), 300)
+    )
+    bin_centers_raw = bin_borders_raw[:-1] + np.diff(bin_borders_raw) / 2
+    return (bin_centers_raw, bin_heights_raw)
+
+
 def read_metadata(metadata, nb):
     Xmin = metadata["current selection"]["mcp"]["--ROI" + nb + ":Xmin"][0]
     Xmax = metadata["current selection"]["mcp"]["--ROI" + nb + ":Xmax"][0]
@@ -63,12 +72,14 @@ def addROI(metadata, ax, nb, color):
         ax.add_collection3d(tri)
 
 
-def plotfigs(ax, X, Y, T):
+def plotfigs(ax, X, Y, T, T_raw):
+    (bin_centers_raw, bin_heights_raw) = plot_unreconstructed_data(T_raw)
     ax[0].hist2d(X, Y, bins=np.linspace(-40, 40, 2 * 81), cmap=plt.cm.jet)
     ax[0].set_xlabel("X")
     ax[0].set_ylabel("Y")
-    ax[0].grid(False)
-    ax[1].hist(T, bins=np.linspace(np.min(T), np.max(T), 300), color="tab:blue")
+    ax[0].grid(True)
+    ax[1].hist(T, bins=np.linspace(0, np.max(T), 300), color="tab:blue")
+    ax[1].plot(bin_centers_raw, bin_heights_raw, linestyle="dotted", color="black")
     ax[1].set_xlabel("time (ms)")
     ax[1].set_ylabel("number of events")
 
@@ -95,7 +106,7 @@ def displayROIs(ax, color, metadata, ROI_name, nb):
     ax[1].axvspan(Tmin, Tmax, alpha=0.2, color=color)
 
 
-def ROIdata(metadata, nb, X, Y, T):
+def ROIdata(metadata, nb, X, Y, T, T_raw):
     (Xmin, Xmax, Ymin, Ymax, Tmin, Tmax) = read_metadata(metadata, nb)
     T_ROI = T[
         (T > Tmin) & (T < Tmax) & (X > Xmin) & (X < Xmax) & (Y > Ymin) & (Y < Ymax)
@@ -118,7 +129,8 @@ def ROIdata(metadata, nb, X, Y, T):
         & (Y > Ymin)
         & (Y < Ymax)
     ]
-    return (X_ROI, Y_ROI, T_ROI)
+    T_raw_ROI = T_raw[(T_raw > Tmin) & (T_raw < Tmax)]
+    return (X_ROI, Y_ROI, T_ROI, T_raw_ROI)
 
 
 def gaussian(x, mean, amplitude, standard_deviation):
@@ -161,16 +173,16 @@ def main(self):
     item = selection[0]
     data.path = item.data(QtCore.Qt.UserRole)
     X, Y, T = data.getrawdata()
-
+    T_raw = data.getdatafromsingleline()
     if "N_ROI0" in metadata["current selection"]["mcp"]:
-        (X_ROI, Y_ROI, T_ROI) = ROIdata(metadata, "0", X, Y, T)
+        (X_ROI, Y_ROI, T_ROI, T_raw_ROI) = ROIdata(metadata, "0", X, Y, T, T_raw)
 
         (popt, pcov) = fit_time_histo(T_ROI)
 
         fig2D0, ax2D0 = plt.subplots(
             2, 1, gridspec_kw={"height_ratios": [3, 1]}, figsize=(6, 8)
         )
-        plotfigs(ax2D0, X_ROI, Y_ROI, T_ROI)
+        plotfigs(ax2D0, X_ROI, Y_ROI, T_ROI, T_raw_ROI)
         t_interval = np.linspace(np.min(T_ROI), np.max(T_ROI), 300)
         ax2D0[1].plot(
             t_interval,
@@ -237,4 +249,4 @@ def main(self):
         with open(str(file_name) + ".json", "w", encoding="utf-8") as file:
             json.dump(current_mcp_metadata, file, ensure_ascii=False, indent=4)
 
-    self.metaDataText.setPlainText(Text)
+        self.metaDataText.setPlainText(Text)

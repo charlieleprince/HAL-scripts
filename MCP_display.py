@@ -20,6 +20,15 @@ NAME = "1. Plot histogram data"  # display name, used in menubar and command pal
 CATEGORY = "MCP - single file"  # category (note that CATEGORY="" is a valid choice)
 
 
+def plot_unreconstructed_data(T_raw):
+
+    bin_heights_raw, bin_borders_raw, _ = plt.hist(
+        T_raw, bins=np.linspace(np.min(T_raw), np.max(T_raw), 300)
+    )
+    bin_centers_raw = bin_borders_raw[:-1] + np.diff(bin_borders_raw) / 2
+    return (bin_centers_raw, bin_heights_raw)
+
+
 def main(self):
     """
     the script also have to define a `main` function. When playing a script,
@@ -43,6 +52,8 @@ def main(self):
     item = selection[0]
     data.path = item.data(QtCore.Qt.UserRole)
     X, Y, T = data.getrawdata()
+    T_raw = data.getdatafromsingleline()
+    (bin_centers_raw, bin_heights_raw) = plot_unreconstructed_data(T_raw)
 
     fig1 = plt.figure()
     ax = plt.axes(projection="3d")
@@ -53,6 +64,7 @@ def main(self):
 
     fig2 = plt.figure()
     plt.hist(T, bins=np.linspace(0, np.max(T), 300))
+    plt.plot(bin_centers_raw, bin_heights_raw, linestyle="dotted", color="black")
     plt.xlabel("time (ms)")
     plt.ylabel("number of events")
     plt.grid(True)
