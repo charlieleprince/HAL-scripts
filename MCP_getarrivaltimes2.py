@@ -123,5 +123,14 @@ def main(self):
                     "comment": "",
                 }
             )
+            current_mcp_metadata.append(
+                {
+                    "name": "ROI0 time width",
+                    "value": popt[2] * 1e3,
+                    "display": "%.2f",
+                    "unit": "µs",
+                    "comment": "",
+                }
+            )
             with open(str(file_name) + ".json", "w", encoding="utf-8") as file:
                 json.dump(current_mcp_metadata, file, ensure_ascii=False, indent=4)

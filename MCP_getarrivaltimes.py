@@ -25,6 +25,11 @@ NAME = "4. Get R0I0 arrival time"  # display name, used in menubar and command p
 CATEGORY = "MCP - single file"  # category (note that CATEGORY="" is a valid choice)
 
 
+k_B = 1.3806e-23
+m = 4 * 1.68e-27
+g = 9.81
+
+
 def read_metadata(metadata, nb):
     Xmin = metadata["current selection"]["mcp"]["--ROI" + nb + ":Xmin"][0]
     Xmax = metadata["current selection"]["mcp"]["--ROI" + nb + ":Xmax"][0]
@@ -183,15 +188,20 @@ def main(self):
         fig0.show()
         fig2D0.show()
 
+        Temperature_t = m * (g ** 2) * ((popt[2]) ** 2) / k_B  # µK
+        Temperature_t_err = 2 * m * (g ** 2) * (popt[2]) * (2 * pcov[2, 2]) / k_B  # µK
         Text = "[fit results]\n"
-        Text += "ROI0 arrival time = " + str(np.round(popt[0])) + " ms"
+        Text += f"t_arrival = {np.round(popt[0], 2)} ± {2*np.round(np.sqrt(pcov[0,0]), 2)} ms\n"
+        Text += f"sigma_t = {np.round(popt[2] , 2)} ± {2*np.round(np.sqrt(pcov[2,2]), 2)} ms\n"
+        Text += (
+            f"T_t = {np.round(Temperature_t,2)} ± {2*np.round(Temperature_t_err,2)} µK"
+        )
 
         MCP_stats_folder = data.path.parent / ".MCPstats"
         MCP_stats_folder.mkdir(exist_ok=True)
         file_name = MCP_stats_folder / data.path.stem
         with open(str(file_name) + ".json", "r", encoding="utf-8") as file:
             current_mcp_metadata = json.load(file)
-
         current_mcp_metadata.append(
             {
                 "name": "ROI0 arrival time",
@@ -201,6 +211,20 @@ def main(self):
                 "comment": "",
             }
         )
+        current_mcp_metadata.append(
+            {
+                "name": "ROI0 time width",
+                "value": popt[2] * 1e3,
+                "display": "%.2f",
+                "unit": "µs",
+                "comment": "",
+            }
+        )
+
+        # if "fit" in metadata["current selection"]:
+        #    print("ouais")
+        #    return
+
         with open(str(file_name) + ".json", "w", encoding="utf-8") as file:
             json.dump(current_mcp_metadata, file, ensure_ascii=False, indent=4)
 
