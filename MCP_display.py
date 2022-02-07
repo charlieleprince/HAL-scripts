@@ -63,8 +63,9 @@ def main(self):
     fig1.show()
 
     fig2 = plt.figure()
+    plt.hist(T_raw, bins=np.linspace(0, np.max(T_raw), 300), color="black")
     plt.hist(T, bins=np.linspace(0, np.max(T), 300))
-    plt.plot(bin_centers_raw, bin_heights_raw, linestyle="dotted", color="black")
+    # plt.plot(bin_centers_raw, bin_heights_raw, linestyle="dotted", color="black")
     plt.xlabel("time (ms)")
     plt.ylabel("number of events")
     plt.grid(True)
