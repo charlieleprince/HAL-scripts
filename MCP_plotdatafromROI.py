@@ -159,12 +159,6 @@ def main(self):
         )
         plotfigs(ax2D0, X_ROI, Y_ROI, T_ROI, T_raw_ROI)
 
-        fig0 = plt.figure()
-        ax0 = plt.axes(projection="3d")
-        ax0.scatter3D(X_ROI, Y_ROI, T_ROI, marker=".")
-        plt.xlabel("X")
-        plt.ylabel("Y")
-        fig0.show()
         fig2D0.show()
     if "N_ROI1" in metadata["current selection"]["mcp"]:
         (X_ROI, Y_ROI, T_ROI) = ROIdata(metadata, "1", X, Y, T)
@@ -173,12 +167,6 @@ def main(self):
         )
         plotfigs(ax2D1, X_ROI, Y_ROI, T_ROI, T_raw_ROI)
 
-        fig1 = plt.figure()
-        ax1 = plt.axes(projection="3d")
-        ax1.scatter3D(X_ROI, Y_ROI, T_ROI, marker=".")
-        plt.xlabel("X")
-        plt.ylabel("Y")
-        fig1.show()
         fig2D1.show()
     if "N_ROI2" in metadata["current selection"]["mcp"]:
         (X_ROI, Y_ROI, T_ROI) = ROIdata(metadata, "2", X, Y, T)
@@ -187,12 +175,6 @@ def main(self):
         )
         plotfigs(ax2D2, X_ROI, Y_ROI, T_ROI, T_raw_ROI)
 
-        fig2 = plt.figure()
-        ax2 = plt.axes(projection="3d")
-        ax2.scatter3D(X_ROI, Y_ROI, T_ROI, marker=".")
-        plt.xlabel("X")
-        plt.ylabel("Y")
-        fig2.show()
         fig2D2.show()
     if "N_ROI3" in metadata["current selection"]["mcp"]:
         (X_ROI, Y_ROI, T_ROI) = ROIdata(metadata, "3", X, Y, T)
@@ -201,10 +183,4 @@ def main(self):
         )
         plotfigs(ax2D3, X_ROI, Y_ROI, T_ROI, T_raw_ROI)
 
-        fig3 = plt.figure()
-        ax3 = plt.axes(projection="3d")
-        ax3.scatter3D(X_ROI, Y_ROI, T_ROI, marker=".")
-        plt.xlabel("X")
-        plt.ylabel("Y")
-        fig3.show()
         fig2D3.show()

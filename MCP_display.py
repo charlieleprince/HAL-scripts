@@ -55,13 +55,6 @@ def main(self):
     T_raw = data.getdatafromsingleline()
     (bin_centers_raw, bin_heights_raw) = plot_unreconstructed_data(T_raw)
 
-    fig1 = plt.figure()
-    ax = plt.axes(projection="3d")
-    ax.scatter3D(X, Y, T, marker=".")
-    plt.xlabel("X")
-    plt.ylabel("Y")
-    fig1.show()
-
     fig2 = plt.figure()
     plt.hist(T_raw, bins=np.linspace(0, np.max(T_raw), 300), color="black")
     plt.hist(T, bins=np.linspace(0, np.max(T), 300))

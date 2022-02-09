@@ -131,26 +131,21 @@ def main(self):
     )
     plotfigs(ax2D, X, Y, T, T_raw)
 
-    fig1 = plt.figure()
-    ax = plt.axes(projection="3d")
-    ax.scatter3D(X, Y, T, marker=".")
-    plt.xlabel("X")
-    plt.ylabel("Y")
     if "N_ROI0" in metadata["current selection"]["mcp"]:
         color = "tab:orange"
-        addROI(metadata, ax, "0", color)
+        # addROI(metadata, ax, "0", color)
         displayROIs(ax2D, color, metadata, "ROI::0", "0")
     if "N_ROI1" in metadata["current selection"]["mcp"]:
         color = "tab:green"
-        addROI(metadata, ax, "1", color)
+        # addROI(metadata, ax, "1", color)
         displayROIs(ax2D, color, metadata, "ROI::1", "1")
     if "N_ROI2" in metadata["current selection"]["mcp"]:
         color = "tab:red"
-        addROI(metadata, ax, "2", color)
+        # addROI(metadata, ax, "2", color)
         displayROIs(ax2D, color, metadata, "ROI::2", "2")
     if "N_ROI3" in metadata["current selection"]["mcp"]:
         color = "tab:purple"
-        addROI(metadata, ax, "3", color)
+        # addROI(metadata, ax, "3", color)
         displayROIs(ax2D, color, metadata, "ROI::3", "3")
 
     fig1.show()

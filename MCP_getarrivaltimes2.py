@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 # /!\/!\/!\
 # in order to be imported as a user script, two "global" variables
 # have to be defined: NAME and CATEGORY
-NAME = "5. Get R0I0 arrival times and temperatures"  # display name, used in menubar and command palette
+NAME = "6. Get R0I0 arrival times and temperatures"  # display name, used in menubar and command palette
 CATEGORY = "MCP"  # category (note that CATEGORY="" is a valid choice)
 
 

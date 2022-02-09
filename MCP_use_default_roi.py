@@ -95,12 +95,6 @@ def exportROIinfo(to_mcp, ROI, nb):
     )
 
 
-def _roi_changed(self):
-    # move self.label
-    position = self.pos()
-    self.label.setPos(position[0], position[1])
-
-
 # main
 def main(self):
     """
