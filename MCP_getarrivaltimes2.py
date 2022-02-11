@@ -142,7 +142,7 @@ def exportROIinfo(to_mcp, ROI, nb):
     )
 
 
-def ROI_data(ROI, X, Y, T, T_raw):
+def ROI_data(ROI, X, Y, T):
     ROI_indices = (
         (T > ROI["Tmin"])
         & (T < ROI["Tmax"])
@@ -151,12 +151,11 @@ def ROI_data(ROI, X, Y, T, T_raw):
         & (Y > ROI["Ymin"])
         & (Y < ROI["Ymax"])
     )
-    ROI_indices2 = (T_raw > ROI["Tmin"]) & (T_raw < ROI["Tmax"])
     T_ROI = T[ROI_indices]
     X_ROI = X[ROI_indices]
     Y_ROI = Y[ROI_indices]
     T_raw_ROI = T_raw[ROI_indices2]
-    return (X_ROI, Y_ROI, T_ROI, T_raw_ROI)
+    return (X_ROI, Y_ROI, T_ROI)
 
 
 def main(self):
@@ -201,7 +200,7 @@ def main(self):
             ROI0["Tmin"] = defaultroi["ROI 0"]["Tmin"]
             ROI0["Tmax"] = defaultroi["ROI 0"]["Tmax"]
 
-            (X_ROI, Y_ROI, T_ROI, T_raw_ROI) = ROI_data(ROI0, X, Y, T, T_raw)
+            (X_ROI, Y_ROI, T_ROI) = ROI_data(ROI0, X, Y, T)
 
             to_mcp_dictionary = []
             to_mcp_dictionary.append(
@@ -260,5 +259,5 @@ def main(self):
         )
         with open(str(file_name) + ".json", "w", encoding="utf-8") as file:
             json.dump(current_mcp_metadata, file, ensure_ascii=False, indent=4)
-            
+
         plt.close()
