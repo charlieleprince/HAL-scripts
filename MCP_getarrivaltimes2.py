@@ -260,3 +260,5 @@ def main(self):
         )
         with open(str(file_name) + ".json", "w", encoding="utf-8") as file:
             json.dump(current_mcp_metadata, file, ensure_ascii=False, indent=4)
+            
+        plt.close()
