@@ -9,7 +9,7 @@ from PyQt5.QtCore import Qt
 from PyQt5 import QtCore
 from HAL.gui.dataexplorer import getSelectionMetaDataFromCache
 from pathlib import Path
-
+from scipy.optimize import curve_fit
 import json
 
 logger = logging.getLogger(__name__)
@@ -20,7 +20,17 @@ logger = logging.getLogger(__name__)
 NAME = "2. Export ROI info to metadata using default ROI0"  # display name, used in menubar and command palette
 CATEGORY = "MCP"  # category (note that CATEGORY="" is a valid choice)
 
+
+k_B = 1.3806e-23
+m = 4 * 1.66e-27
+g = 9.81
+
+
+
 # layout tools
+
+def gaussian(x, mean, amplitude, standard_deviation):
+    return amplitude * np.exp(-((x - mean) ** 2) / (2 * standard_deviation ** 2))
 
 
 def ROI_data(ROI, X, Y, T):
@@ -93,6 +103,21 @@ def exportROIinfo(to_mcp, ROI, nb):
             "comment": "",
         }
     )
+
+
+def fit_time_histo(T):
+    bin_heights, bin_borders, _ = plt.hist(
+        T, bins=np.linspace(np.min(T), np.max(T), 300)
+    )
+    bin_centers = bin_borders[:-1] + np.diff(bin_borders) / 2
+
+    guess_amplitude = np.max(bin_heights)
+    guess_mean = bin_centers[list(bin_heights).index(np.max(bin_heights))]
+    guess_stdev = 5.0
+    p0 = [guess_mean, guess_amplitude, guess_stdev]
+    popt, pcov = curve_fit(gaussian, bin_centers, bin_heights, p0=p0)
+    return (popt, pcov)
+
 
 
 # main
@@ -170,6 +195,8 @@ def main(self):
         )
 
         (X_ROI0, Y_ROI0, T_ROI0) = ROI_data(ROI0, X, Y, T)
+        (popt, pcov) = fit_time_histo(T_ROI0)
+        Temperature_t = m * (g ** 2) * ((popt[2]) ** 2) / k_B  # µK
 
         exportROIinfo(to_mcp_dictionary, ROI0, 0)
         to_mcp_dictionary.append(
@@ -182,8 +209,39 @@ def main(self):
             }
         )
 
+
+        to_mcp_dictionary.append(
+            {
+                "name": "ROI0 arrival time",
+                "value": popt[0],
+                "display": "%.2f",
+                "unit": "ms",
+                "comment": "",
+            }
+        )
+        to_mcp_dictionary.append(
+            {
+                "name": "ROI0 time width",
+                "value": popt[2] * 1e3,
+                "display": "%.2f",
+                "unit": "µs",
+                "comment": "",
+            }
+        )
+        to_mcp_dictionary.append(
+            {
+                "name": "ROI0 temperature",
+                "value": Temperature_t,
+                "display": "%.2f",
+                "unit": "µK",
+                "comment": "",
+            }
+        )
+
         MCP_stats_folder = data.path.parent / ".MCPstats"
         MCP_stats_folder.mkdir(exist_ok=True)
         file_name = MCP_stats_folder / data.path.stem
         with open(str(file_name) + ".json", "w", encoding="utf-8") as file:
             json.dump(to_mcp_dictionary, file, ensure_ascii=False, indent=4)
+
+    plt.close()
