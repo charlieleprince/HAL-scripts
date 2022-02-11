@@ -15,6 +15,7 @@ from HAL.gui.dataexplorer import getSelectionMetaDataFromCache
 from scipy.spatial import ConvexHull
 from mpl_toolkits.mplot3d.art3d import Poly3DCollection
 import json
+from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
@@ -106,6 +107,80 @@ def displayROIs(ax, color, metadata, ROI_name, nb):
     ax[1].axvspan(Tmin, Tmax, alpha=0.2, color=color)
 
 
+def ROI_data(ROI, X, Y, T, T_raw):
+    ROI_indices = (
+        (T > ROI["Tmin"])
+        & (T < ROI["Tmax"])
+        & (X > ROI["Xmin"])
+        & (X < ROI["Xmax"])
+        & (Y > ROI["Ymin"])
+        & (Y < ROI["Ymax"])
+    )
+    ROI_indices2 = (T_raw > ROI["Tmin"]) & (T_raw < ROI["Tmax"])
+    T_ROI = T[ROI_indices]
+    X_ROI = X[ROI_indices]
+    Y_ROI = Y[ROI_indices]
+    T_raw_ROI = T_raw[ROI_indices2]
+    return (X_ROI, Y_ROI, T_ROI, T_raw_ROI)
+
+
+def exportROIinfo(to_mcp, ROI, nb):
+    to_mcp.append(
+        {
+            "name": "--ROI" + str(nb) + ":Xmin",
+            "value": ROI["Xmin"],
+            "display": "%.3g",
+            "unit": "",
+            "comment": "",
+        }
+    )
+    to_mcp.append(
+        {
+            "name": "--ROI" + str(nb) + ":Xmax",
+            "value": ROI["Xmax"],
+            "display": "%.3g",
+            "unit": "",
+            "comment": "",
+        }
+    )
+    to_mcp.append(
+        {
+            "name": "--ROI" + str(nb) + ":Ymin",
+            "value": ROI["Ymin"],
+            "display": "%.3g",
+            "unit": "",
+            "comment": "",
+        }
+    )
+    to_mcp.append(
+        {
+            "name": "--ROI" + str(nb) + ":Ymax",
+            "value": ROI["Ymax"],
+            "display": "%.3g",
+            "unit": "",
+            "comment": "",
+        }
+    )
+    to_mcp.append(
+        {
+            "name": "--ROI" + str(nb) + ":Tmin",
+            "value": ROI["Tmin"],
+            "display": "%.3g",
+            "unit": "",
+            "comment": "",
+        }
+    )
+    to_mcp.append(
+        {
+            "name": "--ROI" + str(nb) + ":Tmax",
+            "value": ROI["Tmax"],
+            "display": "%.3g",
+            "unit": "",
+            "comment": "",
+        }
+    )
+
+
 def ROIdata(metadata, nb, X, Y, T, T_raw):
     (Xmin, Xmax, Ymin, Ymax, Tmin, Tmax) = read_metadata(metadata, nb)
     T_ROI = T[
@@ -169,6 +244,11 @@ def main(self):
     # get object data type
     data_class = self.dataTypeComboBox.currentData()
     data = data_class()
+
+    root = Path().home()
+    default_roi_dir = root / ".HAL"
+    default_roi_file_name = default_roi_dir / "default_mcp_roi.json"
+
     # get path
     item = selection[0]
     data.path = item.data(QtCore.Qt.UserRole)
@@ -177,76 +257,105 @@ def main(self):
     if "N_ROI0" in metadata["current selection"]["mcp"]:
         (X_ROI, Y_ROI, T_ROI, T_raw_ROI) = ROIdata(metadata, "0", X, Y, T, T_raw)
 
-        (popt, pcov) = fit_time_histo(T_ROI)
+    else:
+        with open(default_roi_file_name, encoding="utf8") as f:
+            defaultroi = json.load(f)
 
-        fig2D0, ax2D0 = plt.subplots(
-            2, 1, gridspec_kw={"height_ratios": [3, 1]}, figsize=(6, 8)
-        )
-        plotfigs(ax2D0, X_ROI, Y_ROI, T_ROI, T_raw_ROI)
-        t_interval = np.linspace(np.min(T_ROI), np.max(T_ROI), 300)
-        ax2D0[1].plot(
-            t_interval,
-            gaussian(t_interval, *popt),
-            label="fit",
-            linestyle="--",
-            linewidth=1,
-            color="black",
-        )
-        fig0 = plt.figure()
-        ax0 = plt.axes(projection="3d")
-        ax0.scatter3D(X_ROI, Y_ROI, T_ROI, marker=".")
-        plt.xlabel("X")
-        plt.ylabel("Y")
-        fig0.show()
-        fig2D0.show()
+        ROI0 = {}
+        ROI0["Xmin"] = defaultroi["ROI 0"]["Xmin"]
+        ROI0["Xmax"] = defaultroi["ROI 0"]["Xmax"]
+        ROI0["Ymin"] = defaultroi["ROI 0"]["Ymin"]
+        ROI0["Ymax"] = defaultroi["ROI 0"]["Ymax"]
+        ROI0["Tmin"] = defaultroi["ROI 0"]["Tmin"]
+        ROI0["Tmax"] = defaultroi["ROI 0"]["Tmax"]
 
-        Temperature_t = m * (g ** 2) * ((popt[2]) ** 2) / k_B  # µK
-        Temperature_t_err = 2 * m * (g ** 2) * (popt[2]) * (2 * pcov[2, 2]) / k_B  # µK
-        Text = "[fit results]\n"
-        Text += f"t_arrival = {np.round(popt[0], 2)} ± {2*np.round(np.sqrt(pcov[0,0]), 2)} ms\n"
-        Text += f"sigma_t = {np.round(popt[2] , 2)} ± {2*np.round(np.sqrt(pcov[2,2]), 2)} ms\n"
-        Text += (
-            f"T_t = {np.round(Temperature_t,2)} ± {2*np.round(Temperature_t_err,2)} µK"
+        (X_ROI, Y_ROI, T_ROI, T_raw_ROI) = ROI_data(ROI0, X, Y, T, T_raw)
+
+        to_mcp_dictionary = []
+        to_mcp_dictionary.append(
+            {
+                "name": "N_tot",
+                "value": len(X),
+                "display": "%o",
+                "unit": "",
+                "comment": "",
+            }
         )
+        exportROIinfo(to_mcp_dictionary, ROI0, 0)
 
         MCP_stats_folder = data.path.parent / ".MCPstats"
         MCP_stats_folder.mkdir(exist_ok=True)
         file_name = MCP_stats_folder / data.path.stem
-        with open(str(file_name) + ".json", "r", encoding="utf-8") as file:
-            current_mcp_metadata = json.load(file)
-        current_mcp_metadata.append(
-            {
-                "name": "ROI0 arrival time",
-                "value": popt[0],
-                "display": "%.2f",
-                "unit": "ms",
-                "comment": "",
-            }
-        )
-        current_mcp_metadata.append(
-            {
-                "name": "ROI0 sigma t",
-                "value": popt[2],
-                "display": "%.2f",
-                "unit": "ms",
-                "comment": "",
-            }
-        )
-        current_mcp_metadata.append(
-            {
-                "name": "ROI0 temperature",
-                "value": Temperature_t,
-                "display": "%.2f",
-                "unit": "µK",
-                "comment": "",
-            }
-        )
-
-        # if "fit" in metadata["current selection"]:
-        #    print("ouais")
-        #    return
-
         with open(str(file_name) + ".json", "w", encoding="utf-8") as file:
-            json.dump(current_mcp_metadata, file, ensure_ascii=False, indent=4)
+            json.dump(to_mcp_dictionary, file, ensure_ascii=False, indent=4)
 
-        self.metaDataText.setPlainText(Text)
+    (popt, pcov) = fit_time_histo(T_ROI)
+
+    fig2D0, ax2D0 = plt.subplots(
+        2, 1, gridspec_kw={"height_ratios": [3, 1]}, figsize=(6, 8)
+    )
+    plotfigs(ax2D0, X_ROI, Y_ROI, T_ROI, T_raw_ROI)
+    t_interval = np.linspace(np.min(T_ROI), np.max(T_ROI), 300)
+    ax2D0[1].plot(
+        t_interval,
+        gaussian(t_interval, *popt),
+        label="fit",
+        linestyle="--",
+        linewidth=1,
+        color="black",
+    )
+
+    fig2D0.show()
+
+    Temperature_t = m * (g ** 2) * ((popt[2]) ** 2) / k_B  # µK
+    Temperature_t_err = 2 * m * (g ** 2) * (popt[2]) * (2 * pcov[2, 2]) / k_B  # µK
+    Text = "[fit results]\n"
+    Text += (
+        f"t_arrival = {np.round(popt[0], 2)} ± {2*np.round(np.sqrt(pcov[0,0]), 2)} ms\n"
+    )
+    Text += (
+        f"sigma_t = {np.round(popt[2] , 2)} ± {2*np.round(np.sqrt(pcov[2,2]), 2)} ms\n"
+    )
+    Text += f"T_t = {np.round(Temperature_t,2)} ± {2*np.round(Temperature_t_err,2)} µK"
+
+    MCP_stats_folder = data.path.parent / ".MCPstats"
+    MCP_stats_folder.mkdir(exist_ok=True)
+    file_name = MCP_stats_folder / data.path.stem
+    with open(str(file_name) + ".json", "r", encoding="utf-8") as file:
+        current_mcp_metadata = json.load(file)
+    current_mcp_metadata.append(
+        {
+            "name": "ROI0 arrival time",
+            "value": popt[0],
+            "display": "%.2f",
+            "unit": "ms",
+            "comment": "",
+        }
+    )
+    current_mcp_metadata.append(
+        {
+            "name": "ROI0 sigma t",
+            "value": popt[2],
+            "display": "%.2f",
+            "unit": "ms",
+            "comment": "",
+        }
+    )
+    current_mcp_metadata.append(
+        {
+            "name": "ROI0 temperature",
+            "value": Temperature_t,
+            "display": "%.2f",
+            "unit": "µK",
+            "comment": "",
+        }
+    )
+
+    # if "fit" in metadata["current selection"]:
+    #    print("ouais")
+    #    return
+
+    with open(str(file_name) + ".json", "w", encoding="utf-8") as file:
+        json.dump(current_mcp_metadata, file, ensure_ascii=False, indent=4)
+
+    self.metaDataText.setPlainText(Text)
