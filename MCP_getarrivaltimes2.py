@@ -154,7 +154,7 @@ def ROI_data(ROI, X, Y, T):
     T_ROI = T[ROI_indices]
     X_ROI = X[ROI_indices]
     Y_ROI = Y[ROI_indices]
-    T_raw_ROI = T_raw[ROI_indices2]
+    #T_raw_ROI = T_raw[ROI_indices2]
     return (X_ROI, Y_ROI, T_ROI)
 
 
