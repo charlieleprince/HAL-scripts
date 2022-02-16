@@ -66,7 +66,7 @@ def main(self):
 
 
     Text =  "[qc3 parameters]\n"
-
+    Text+=" /!\ Warning /!\ \n The scanned variable may be wrong\n"
 
     for key, value in sequence_parameters.items():
         if type(value) is dict:
