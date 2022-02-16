@@ -148,5 +148,4 @@ def main(self):
         # addROI(metadata, ax, "3", color)
         displayROIs(ax2D, color, metadata, "ROI::3", "3")
 
-    fig1.show()
     fig2D.show()

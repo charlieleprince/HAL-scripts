@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 # /!\/!\/!\
 # in order to be imported as a user script, two "global" variables
 # have to be defined: NAME and CATEGORY
-NAME = "2. Export ROI atoms number using default ROI0"  # display name, used in menubar and command palette
+NAME = "2bis. Export ROI number of atoms & fit arrival times using default ROI0"  # display name, used in menubar and command palette
 CATEGORY = "MCP"  # category (note that CATEGORY="" is a valid choice)
 
 
@@ -195,6 +195,8 @@ def main(self):
         )
 
         (X_ROI0, Y_ROI0, T_ROI0) = ROI_data(ROI0, X, Y, T)
+        (popt, pcov) = fit_time_histo(T_ROI0)
+        Temperature_t = m * (g ** 2) * ((popt[2]) ** 2) / k_B  # µK
 
         exportROIinfo(to_mcp_dictionary, ROI0, 0)
         to_mcp_dictionary.append(
@@ -203,6 +205,35 @@ def main(self):
                 "value": len(X_ROI0),
                 "display": "%o",
                 "unit": "",
+                "comment": "",
+            }
+        )
+
+
+        to_mcp_dictionary.append(
+            {
+                "name": "ROI0 arrival time",
+                "value": popt[0],
+                "display": "%.2f",
+                "unit": "ms",
+                "comment": "",
+            }
+        )
+        to_mcp_dictionary.append(
+            {
+                "name": "ROI0 time width",
+                "value": popt[2] * 1e3,
+                "display": "%.2f",
+                "unit": "µs",
+                "comment": "",
+            }
+        )
+        to_mcp_dictionary.append(
+            {
+                "name": "ROI0 temperature",
+                "value": Temperature_t,
+                "display": "%.2f",
+                "unit": "µK",
                 "comment": "",
             }
         )
