@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 # /!\/!\/!\
 # in order to be imported as a user script, two "global" variables
 # have to be defined: NAME and CATEGORY
-NAME = "6. Get R0I0 arrival times and temperatures"  # display name, used in menubar and command palette
+NAME = "6. Get arrival times and temperatures"  # display name, used in menubar and command palette
 CATEGORY = "MCP"  # category (note that CATEGORY="" is a valid choice)
 
 
@@ -154,7 +154,7 @@ def ROI_data(ROI, X, Y, T):
     T_ROI = T[ROI_indices]
     X_ROI = X[ROI_indices]
     Y_ROI = Y[ROI_indices]
-    #T_raw_ROI = T_raw[ROI_indices2]
+    # T_raw_ROI = T_raw[ROI_indices2]
     return (X_ROI, Y_ROI, T_ROI)
 
 

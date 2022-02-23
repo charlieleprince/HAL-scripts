@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 # /!\/!\/!\
 # in order to be imported as a user script, two "global" variables
 # have to be defined: NAME and CATEGORY
-NAME = "1. Plot histogram data"  # display name, used in menubar and command palette
+NAME = "1. Plot time histogram"  # display name, used in menubar and command palette
 CATEGORY = "MCP - single file"  # category (note that CATEGORY="" is a valid choice)
 
 
@@ -64,9 +64,11 @@ def main(self):
     plt.grid(True)
     fig2.show()
 
+    """
     fig3 = plt.figure()
     plt.hist2d(X, Y, bins=np.linspace(-40, 40, 2 * 81), cmap=plt.cm.jet)
     plt.xlabel("time (ms)")
     plt.ylabel("number of events")
     plt.colorbar()
     fig3.show()
+    """

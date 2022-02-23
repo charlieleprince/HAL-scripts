@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 # /!\/!\/!\
 # in order to be imported as a user script, two "global" variables
 # have to be defined: NAME and CATEGORY
-NAME = "3. Combine selected files"  # display name, used in menubar and command palette
+NAME = "3. Combine"  # display name, used in menubar and command palette
 CATEGORY = "MCP"  # category (note that CATEGORY="" is a valid choice)
 
 
@@ -58,3 +58,10 @@ def main(self):
     plt.hist2d(X, Y, bins=np.linspace(-40, 40, 2 * 81), cmap=plt.cm.jet)
     plt.colorbar()
     fig3.show()
+
+    fig2 = plt.figure()
+    plt.hist(T, bins=np.linspace(0, np.max(T), 300))
+    plt.xlabel("time (ms)")
+    plt.ylabel("number of events")
+    plt.grid(True)
+    fig2.show()

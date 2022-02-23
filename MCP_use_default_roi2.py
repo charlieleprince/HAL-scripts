@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 # /!\/!\/!\
 # in order to be imported as a user script, two "global" variables
 # have to be defined: NAME and CATEGORY
-NAME = "2bis. Export ROI number of atoms & fit arrival times using default ROI0"  # display name, used in menubar and command palette
+NAME = "2bis. Get number of atoms & fit arrival times in default ROI0"  # display name, used in menubar and command palette
 CATEGORY = "MCP"  # category (note that CATEGORY="" is a valid choice)
 
 
@@ -26,8 +26,8 @@ m = 4 * 1.66e-27
 g = 9.81
 
 
-
 # layout tools
+
 
 def gaussian(x, mean, amplitude, standard_deviation):
     return amplitude * np.exp(-((x - mean) ** 2) / (2 * standard_deviation ** 2))
@@ -119,7 +119,6 @@ def fit_time_histo(T):
     return (popt, pcov)
 
 
-
 # main
 def main(self):
     """
@@ -208,7 +207,6 @@ def main(self):
                 "comment": "",
             }
         )
-
 
         to_mcp_dictionary.append(
             {
