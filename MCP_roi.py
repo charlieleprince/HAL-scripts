@@ -505,7 +505,7 @@ def main(self):
             {
                 "name": "N_tot",
                 "value": len(X),
-                "display": "%o",
+                "display": "%.3g",
                 "unit": "",
                 "comment": "",
             }
@@ -519,7 +519,7 @@ def main(self):
                 {
                     "name": "N_ROI0",
                     "value": len(X_ROI0),
-                    "display": "%o",
+                    "display": "%.3g",
                     "unit": "",
                     "comment": "",
                 }
@@ -532,7 +532,7 @@ def main(self):
                 {
                     "name": "N_ROI1",
                     "value": len(X_ROI1),
-                    "display": "%o",
+                    "display": "%.3g",
                     "unit": "",
                     "comment": "",
                 }
@@ -544,7 +544,7 @@ def main(self):
                 {
                     "name": "N_ROI2",
                     "value": len(X_ROI2),
-                    "display": "%o",
+                    "display": "%.3g",
                     "unit": "",
                     "comment": "",
                 }
@@ -556,7 +556,7 @@ def main(self):
                 {
                     "name": "N_ROI3",
                     "value": len(X_ROI3),
-                    "display": "%o",
+                    "display": "%.3g",
                     "unit": "",
                     "comment": "",
                 }

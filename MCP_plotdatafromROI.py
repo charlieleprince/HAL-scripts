@@ -323,7 +323,7 @@ def main(self):
             {
                 "name": "N_tot",
                 "value": len(X),
-                "display": "%o",
+                "display": "%.3g",
                 "unit": "",
                 "comment": "",
             }

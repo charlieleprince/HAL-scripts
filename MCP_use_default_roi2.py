@@ -187,7 +187,7 @@ def main(self):
             {
                 "name": "N_tot",
                 "value": len(X),
-                "display": "%o",
+                "display": "%.3g",
                 "unit": "",
                 "comment": "",
             }
@@ -202,7 +202,7 @@ def main(self):
             {
                 "name": "N_ROI0",
                 "value": len(X_ROI0),
-                "display": "%o",
+                "display": "%.3g",
                 "unit": "",
                 "comment": "",
             }

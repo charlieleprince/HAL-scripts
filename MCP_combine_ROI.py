@@ -24,6 +24,16 @@ NAME = (
 CATEGORY = "MCP"  # category (note that CATEGORY="" is a valid choice)
 
 
+def read_metadata(metadata, nb):
+    Xmin = metadata["current selection"]["mcp"]["--ROI" + nb + ":Xmin"][0]
+    Xmax = metadata["current selection"]["mcp"]["--ROI" + nb + ":Xmax"][0]
+    Ymin = metadata["current selection"]["mcp"]["--ROI" + nb + ":Ymin"][0]
+    Ymax = metadata["current selection"]["mcp"]["--ROI" + nb + ":Ymax"][0]
+    Tmin = metadata["current selection"]["mcp"]["--ROI" + nb + ":Tmin"][0]
+    Tmax = metadata["current selection"]["mcp"]["--ROI" + nb + ":Tmax"][0]
+    return (Xmin, Xmax, Ymin, Ymax, Tmin, Tmax)
+
+
 def ROIdata(metadata, nb, X, Y, T):
     (Xmin, Xmax, Ymin, Ymax, Tmin, Tmax) = read_metadata(metadata, nb)
     T_ROI = T[
@@ -170,7 +180,7 @@ def main(self):
             {
                 "name": "N_tot",
                 "value": len(X),
-                "display": "%o",
+                "display": "%.3g",
                 "unit": "",
                 "comment": "",
             }
@@ -212,7 +222,7 @@ def main(self):
                 {
                     "name": "N_tot",
                     "value": len(X),
-                    "display": "%o",
+                    "display": "%.3g",
                     "unit": "",
                     "comment": "",
                 }
