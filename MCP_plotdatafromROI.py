@@ -129,7 +129,6 @@ def plotfigs(ax, X, Y, T, T_raw):
     ax[0].hist2d(X, Y, bins=np.linspace(-40, 40, 2 * 81), cmap=plt.cm.jet)
     ax[0].set_xlabel("X")
     ax[0].set_ylabel("Y")
-    ax[0].grid(True)
     ax[1].hist(
         T_raw, bins=np.linspace(np.min(T_raw), np.max(T_raw), 300), color="black"
     )
@@ -137,6 +136,34 @@ def plotfigs(ax, X, Y, T, T_raw):
     # ax[1].plot(bin_centers_raw, bin_heights_raw, linestyle="dotted", color="black")
     ax[1].set_xlabel("time (ms)")
     ax[1].set_ylabel("number of events")
+
+
+def plot_XT_data(X, T):
+    fig = plt.figure()
+    plt.hist2d(
+        X,
+        T,
+        bins=[np.linspace(-40, 40, 2 * 81), np.linspace(np.min(T), np.max(T), 2 * 81)],
+        cmap=plt.cm.jet,
+    )
+    plt.xlabel("X")
+    plt.ylabel("T")
+    plt.colorbar()
+    fig.show()
+
+
+def plot_YT_data(Y, T):
+    fig = plt.figure()
+    plt.hist2d(
+        Y,
+        T,
+        [np.linspace(-40, 40, 2 * 81), np.linspace(np.min(T), np.max(T), 2 * 81)],
+        cmap=plt.cm.jet,
+    )
+    plt.xlabel("Y")
+    plt.ylabel("T")
+    plt.colorbar()
+    fig.show()
 
 
 def displayROIs(ax, color, metadata, ROI_name, nb):
@@ -238,7 +265,8 @@ def main(self):
             2, 1, gridspec_kw={"height_ratios": [3, 1]}, figsize=(6, 8)
         )
         plotfigs(ax2D0, X_ROI, Y_ROI, T_ROI, T_raw_ROI)
-
+        plot_XT_data(X_ROI, T_ROI)
+        plot_YT_data(Y_ROI, T_ROI)
         fig2D0.show()
     if "N_ROI1" in metadata["current selection"]["mcp"]:
         (X_ROI, Y_ROI, T_ROI) = ROIdata(metadata, "1", X, Y, T)
@@ -246,7 +274,8 @@ def main(self):
             2, 1, gridspec_kw={"height_ratios": [3, 1]}, figsize=(6, 8)
         )
         plotfigs(ax2D1, X_ROI, Y_ROI, T_ROI, T_raw_ROI)
-
+        plot_XT_data(X_ROI, T_ROI)
+        plot_YT_data(Y_ROI, T_ROI)
         fig2D1.show()
     if "N_ROI2" in metadata["current selection"]["mcp"]:
         (X_ROI, Y_ROI, T_ROI) = ROIdata(metadata, "2", X, Y, T)
@@ -254,7 +283,8 @@ def main(self):
             2, 1, gridspec_kw={"height_ratios": [3, 1]}, figsize=(6, 8)
         )
         plotfigs(ax2D2, X_ROI, Y_ROI, T_ROI, T_raw_ROI)
-
+        plot_XT_data(X_ROI, T_ROI)
+        plot_YT_data(Y_ROI, T_ROI)
         fig2D2.show()
     if "N_ROI3" in metadata["current selection"]["mcp"]:
         (X_ROI, Y_ROI, T_ROI) = ROIdata(metadata, "3", X, Y, T)
@@ -262,7 +292,8 @@ def main(self):
             2, 1, gridspec_kw={"height_ratios": [3, 1]}, figsize=(6, 8)
         )
         plotfigs(ax2D3, X_ROI, Y_ROI, T_ROI, T_raw_ROI)
-
+        plot_XT_data(X_ROI, T_ROI)
+        plot_YT_data(Y_ROI, T_ROI)
         fig2D3.show()
 
     else:
@@ -284,6 +315,8 @@ def main(self):
         )
         plotfigs(ax2D, X_ROI, Y_ROI, T_ROI, T_raw_ROI)
         fig2D.show()
+        plot_XT_data(X_ROI, T_ROI)
+        plot_YT_data(Y_ROI, T_ROI)
 
         to_mcp_dictionary = []
         to_mcp_dictionary.append(
