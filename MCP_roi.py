@@ -561,6 +561,24 @@ def main(self):
                     "comment": "",
                 }
             )
+
+
+        if ROI0["enabled"] & ROI1["enabled"]:
+            (X_ROI0, Y_ROI0, T_ROI0) = ROI_data(ROI0, X, Y, T)
+            nb0 = len(X_ROI0)
+            (X_ROI1, Y_ROI1, T_ROI1) = ROI_data(ROI1, X, Y, T)
+            nb1 = len(X_ROI1)
+            nb0norm=nb0/(nb0+nb1)
+            to_mcp_dictionary.append(
+                {
+                    "name": "N_ROI0/(N_ROI0+N_ROI1)",
+                    "value": nb0norm,
+                    "display": "%.3g",
+                    "unit": "",
+                    "comment": "",
+                }
+            )
+
         MCP_stats_folder = data.path.parent / ".MCPstats"
         MCP_stats_folder.mkdir(exist_ok=True)
         file_name = MCP_stats_folder / data.path.stem
