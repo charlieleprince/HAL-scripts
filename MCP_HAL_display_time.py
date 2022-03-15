@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 # /!\/!\/!\
 # in order to be imported as a user script, two "global" variables
 # have to be defined: NAME and CATEGORY
-NAME = "2. Reset display"  # display name, used in menubar and command palette
+NAME = "3. Plot time histogram"  # display name, used in menubar and command palette
 CATEGORY = "HAL - MCP display"  # category (note that CATEGORY="" is a valid choice)
 
 root = Path().home()
@@ -36,8 +36,7 @@ def main(self):
     with open(HAL_display, "r", encoding="utf-8") as file:
         current_mcp_display = json.load(file)
 
-    current_mcp_display["plot Roi only"] = "false"
-    current_mcp_display["plot time histogram"] = "false"
+    current_mcp_display["plot time histogram"] = "true"
 
     with open(HAL_display, "w", encoding="utf-8") as file:
         json.dump(current_mcp_display, file, ensure_ascii=False, indent=4)

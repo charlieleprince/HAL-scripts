@@ -33,7 +33,10 @@ def main(self):
     HAL mainwindow object (granting access to all the gui attributes and methods)
     """
 
-    init_hal_display = {}
-    init_hal_display["plot Roi only"] = "true"
+    with open(HAL_display, "r", encoding="utf-8") as file:
+        current_mcp_display = json.load(file)
+
+    current_mcp_display["plot Roi only"] = "true"
+
     with open(HAL_display, "w", encoding="utf-8") as file:
-        json.dump(init_hal_display, file, ensure_ascii=False, indent=4)
+        json.dump(current_mcp_display, file, ensure_ascii=False, indent=4)
