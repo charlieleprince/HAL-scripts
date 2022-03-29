@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 from pathlib import Path
 import json
 import logging
@@ -7,6 +5,7 @@ from statistics import mode
 import matplotlib.pyplot as plt
 import plotly.express as px
 import plotly.graph_objects as go
+from mayavi import mlab
 import numpy as np
 import pandas as pd
 from scipy import stats
@@ -19,7 +18,7 @@ from HAL.gui.dataexplorer import getSelectionMetaDataFromCache
 
 logger = logging.getLogger(__name__)
 
-NAME = "Plot 3D momentum space"  # display name, used in menubar and command palette
+NAME = "Plot sections of 3D momentum space"  # display name, used in menubar and command palette
 CATEGORY = "MCP"  # category (note that CATEGORY="" is a valid choice)
 
 
@@ -78,24 +77,17 @@ def main(self):
     kde = stats.gaussian_kde(values)
     atoms_df["density"] = kde(values)
 
-    fig = go.Figure(
-        data=[
-            go.Scatter3d(
-                x=atoms_df["X"],
-                y=atoms_df["Y"],
-                z=atoms_df["T"],
-                mode="markers",
-                marker=dict(
-                    size=1,
-                    color=atoms_df[
-                        "density"
-                    ],  # set color to an array/list of desired values
-                    colorscale="Jet",  # choose a colorscale
-                    opacity=0.8,
-                ),
-            )
-        ]
-    )
-    # tight layout
-    fig.update_layout(margin=dict(l=0, r=0, b=0, t=0))
-    fig.show()
+    # Create a regular 3D grid with 50 points in each dimension
+    xmin, ymin, zmin = ROI0["Xmin"], ROI0["Ymin"], ROI0["Tmin"]
+    xmax, ymax, zmax = ROI0["Xmax"], ROI0["Ymax"], ROI0["Tmax"]
+    xi, yi, zi = np.mgrid[xmin:xmax:50j, ymin:ymax:50j, zmin:zmax:100j]
+
+    # Evaluate the KDE on a regular grid...
+    coords = np.vstack([item.ravel() for item in [xi, yi, zi]])
+    density = kde(coords).reshape(xi.shape)
+
+    # Visualize the density estimate as isosurfaces
+    volslice = mlab.figure()
+    mlab.volume_slice(xi, yi, zi, density, plane_orientation="z_axes", figure=volslice)
+    mlab.axes()
+    mlab.show()
