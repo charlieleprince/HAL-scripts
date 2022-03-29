@@ -6,9 +6,11 @@ import logging
 from statistics import mode
 import matplotlib.pyplot as plt
 import plotly.express as px
+import plotly.graph_objects as go
 import numpy as np
 import pandas as pd
-import scipy.optimize as opt
+from scipy import stats
+
 from datetime import datetime
 from PyQt5.QtWidgets import QInputDialog
 from PyQt5.QtCore import Qt
@@ -27,44 +29,6 @@ def main(self):
     default_roi_dir = root / ".HAL"
     default_roi_file_name = default_roi_dir / "default_mcp_roi.json"
 
-    if not default_roi_file_name.is_file():
-        default_roi_dict = {
-            "ROI 0": {
-                "Xmin": None,
-                "Xmax": None,
-                "Ymin": None,
-                "Ymax": None,
-                "Tmin": None,
-                "Tmax": None,
-            },
-            "ROI 1": {
-                "Xmin": None,
-                "Xmax": None,
-                "Ymin": None,
-                "Ymax": None,
-                "Tmin": None,
-                "Tmax": None,
-            },
-            "ROI 2": {
-                "Xmin": None,
-                "Xmax": None,
-                "Ymin": None,
-                "Ymax": None,
-                "Tmin": None,
-                "Tmax": None,
-            },
-            "ROI 3": {
-                "Xmin": None,
-                "Xmax": None,
-                "Ymin": None,
-                "Ymax": None,
-                "Tmin": None,
-                "Tmax": None,
-            },
-        }
-        default_roi_file_name = default_roi_dir / "default_mcp_roi.json"
-        with open(default_roi_file_name, "w", encoding="utf-8") as file:
-            json.dump(default_roi_dict, file, ensure_ascii=False, indent=4)
     with open(default_roi_file_name, encoding="utf8") as f:
         defaultroi = json.load(f)
 
@@ -92,25 +56,29 @@ def main(self):
     size = np.ones(len(T))
 
     atoms_df = pd.DataFrame({"X": X, "Y": Y, "T": T})
+    atoms_df = atoms_df.loc[atoms_df["T"] > 280]
+    atoms_df = atoms_df.loc[atoms_df["T"] < 320]
 
-    x_bin = np.linspace(atoms_df["X"].min(), atoms_df["X"].max(), 100)
-    y_bin = np.linspace(atoms_df["Y"].min(), atoms_df["Y"].max(), 100)
-    t_bin = np.linspace(290, 325, 100)
+    values = np.array([atoms_df["X"], atoms_df["Y"], atoms_df["T"]])
+    
+    kde = stats.gaussian_kde(values)
+    atoms_df["density"] = kde(values)
 
-    groups = atoms_df.groupby(np.digitize(atoms_df.X, x_bin))
-    print(groups.size())
-    # atoms_binned_df = {"X": }
-
-    fig = px.scatter_3d(
-        atoms_df,
-        x="X",
-        y="Y",
-        z="T",
-        # mode="markers",
-        size=size,
-        color=T,  # set color to an array/list of desired values
-        # colorscale="Viridis",  # choose a colorscale
-        opacity=0.7,
+    fig = go.Figure(
+        data=[
+            go.Scatter3d(
+                x=atoms_df["X"],
+                y=atoms_df["Y"],
+                z=atoms_df["T"],
+                mode="markers",
+                marker=dict(
+                    size=1,
+                    color=atoms_df["density"],  # set color to an array/list of desired values
+                    colorscale="Jet",  # choose a colorscale
+                    opacity=0.8,
+                ),
+            )
+        ]
     )
     # tight layout
     fig.update_layout(margin=dict(l=0, r=0, b=0, t=0))
