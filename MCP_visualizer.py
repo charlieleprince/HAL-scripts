@@ -29,7 +29,7 @@ CATEGORY = "MCP"  # category (note that CATEGORY="" is a valid choice)
 # sg.theme("DarkBlack")
 sg.theme("LightGrey1")
 
-
+# https://stackoverflow.com/questions/66662800/update-element-using-a-function-pysimplegui
 def draw_figure(canvas, figure):
     figure_canvas_agg = FigureCanvasTkAgg(figure, canvas)
     figure_canvas_agg.draw()
@@ -89,12 +89,12 @@ def main(self):
     # print(list(data.path.parent.iterdir()))
     list_of_files = []
 
-    currentDirectory = data.path.parent.parent
-    for currentDir in currentDirectory.iterdir():
-        if currentDir.is_dir():
-            for currentFile in currentDir.iterdir():
-                if currentFile.suffix == ".atoms":
-                    list_of_files.append(currentFile.stem)
+    currentDir = data.path.parent
+    for currentFile in currentDir.iterdir():
+        if currentFile.suffix == ".atoms":
+            list_of_files.append(currentFile.stem)
+    seq_dir = str(currentDir)
+    seq_number = seq_dir.split("\\")[len(seq_dir.split("\\")) - 1]
 
     list_of_files.reverse()
     # gui layout
@@ -124,7 +124,8 @@ def main(self):
     ]
 
     l2col1 = [
-        [sg.Checkbox("ROI::0", default=True, key="ROI0", text_color="orange")],
+        [sg.Text("ROI selection", font="Helvetica 10 bold", justification="center")],
+        [sg.Checkbox("Plot data from ROI", default=False, key="ROI0")],
         [
             sg.Text("Tmin"),
             sg.Input(
@@ -156,28 +157,51 @@ def main(self):
             ),
         ],
         [
-            sg.Text("1D - Number of bins"),
-            sg.Input(size=(6, 1), default_text=300, key="bins1D"),
+            sg.Checkbox("Set to default", default=True, key="set to default"),
         ],
-        [
-            sg.Text("2D - Number of bins"),
-            sg.Input(size=(6, 1), default_text=160, key="bins2D"),
-        ],
+        [sg.Text("2D graph options", font="Helvetica 10 bold", justification="center")],
         [
             sg.Checkbox("XY", default=True, key="XY"),
             sg.Checkbox("XT", default=False, key="XT"),
             sg.Checkbox("YT", default=False, key="YT"),
-            sg.Checkbox("3D", default=False, key="3D"),
             sg.Checkbox("Grid", default=True, key="grid"),
         ],
         [
-            sg.Button("Ok"),
-            sg.Button("Update", button_color=("white", "green")),
-            sg.Button("Close"),
+            sg.Text("Number of bins"),
+            sg.Input(size=(6, 1), default_text=160, key="bins2D"),
         ],
         [
-            sg.Checkbox("Set to default", default=True, key="set to default"),
+            sg.Combo(
+                ["colormap 1", "colormap 2", "colormap 3"],
+                default_value="colormap 1",
+                enable_events=True,
+                key="combo",
+            )
         ],
+        [sg.Text("1D graph options", font="Helvetica 10 bold", justification="center")],
+        [
+            sg.Checkbox("T", default=True, key="T"),
+            sg.Checkbox("X", default=False, key="X"),
+            sg.Checkbox("Y", default=False, key="Y"),
+            sg.Checkbox("Grid", default=True, key="grid1D"),
+        ],
+        [
+            sg.Text("Number of bins"),
+            sg.Input(size=(6, 1), default_text=300, key="bins1D"),
+        ],
+        [
+            sg.Checkbox(
+                "Max number of events", default=False, key="max events enabled"
+            ),
+            sg.Input(size=(6, 1), default_text=300, key="max events"),
+        ],
+        [
+            sg.Checkbox(
+                "Plot unreconstructed data", default=False, key="unreconstructed"
+            )
+        ],
+        [sg.Checkbox("logscale", default=False, key="logscale")],
+        [sg.Button("Update", button_color=("white", "green"))],
     ]
 
     l2col2 = [[sg.Canvas(key="-CANVAS-")]]
@@ -186,12 +210,17 @@ def main(self):
         [sg.Checkbox("test", default=True, key="testkey", text_color="orange")],
     ]
 
-    l1col1 = [[sg.Button("refresh", button_color=("white", "green"))]]
+    l1col1 = [[sg.Text("Bonjour")]]
     l1col2 = [[sg.Text("WORK IN PROGRESS")]]
     l1col3 = [[sg.Button("testbouton")]]
     # l3col1 = [[sg.Button("testbouton")]]
     l3col2 = [[sg.Canvas(key="-CANVAS2-")]]
-    l3col3 = [[sg.Button("testbouton")]]
+    l3col3 = [
+        [sg.Button("Open 2D graph"), sg.Button("Open 1D graph")],
+        [
+            sg.Button("Open 3D graph"),
+        ],
+    ]
 
     data_options_col = [
         [
@@ -208,38 +237,38 @@ def main(self):
                 key="deselect all",
             )
         ],
-        [
-            sg.Checkbox(
-                "Select all from seq",
-                default=False,
-                key="deselect all from seq",
-            ),
-            sg.Input(size=(6, 1), default_text="001", key="selected_seq"),
-        ],
     ]
 
     l3col1 = [
         [
+            sg.Button(
+                "refresh",
+                button_color=("white", "green"),
+            ),
+            sg.Text("Sequence"),
+            sg.Input(size=(6, 1), default_text=seq_number, key="selected_seq"),
+        ],
+        [
             sg.Column(data_col, scrollable=True, vertical_scroll_only=True),
             sg.Column(data_options_col),
-        ]
+        ],
     ]
 
     layout = [
         [
-            sg.Frame(layout=l1col1, title="", size=(300, 100)),
+            sg.Frame(layout=l1col1, title="", size=(400, 100)),
             sg.Frame(layout=l1col2, title="", size=(550, 100)),
-            sg.Frame(layout=l1col3, title="", size=(300, 100)),
+            sg.Frame(layout=l1col3, title="Quote of the day", size=(300, 100)),
         ],
         [
-            sg.Frame(layout=l2col1, title="Options", size=(300, 550)),
-            sg.Frame(layout=l2col2, title="", size=(550, 550)),
-            sg.Frame(layout=l2col3, title="", size=(300, 550)),
+            sg.Frame(layout=l2col1, title="Options", size=(400, 550)),
+            sg.Frame(layout=l2col2, title="2D graph", size=(550, 550)),
+            sg.Frame(layout=l2col3, title="qc3 parameters", size=(300, 550)),
         ],
         [
-            sg.Frame(layout=l3col1, title="Data", size=(300, 250)),
-            sg.Frame(layout=l3col2, title="", size=(550, 250)),
-            sg.Frame(layout=l3col3, title="", size=(300, 250)),
+            sg.Frame(layout=l3col1, title="Data", size=(400, 250)),
+            sg.Frame(layout=l3col2, title="1D graph", size=(550, 250)),
+            sg.Frame(layout=l3col3, title="Export", size=(300, 250)),
         ],
     ]
 
