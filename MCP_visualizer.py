@@ -37,6 +37,30 @@ def draw_figure(canvas, figure):
     return figure_canvas_agg
 
 
+def get_histo(T, bins):
+    bin_heights, bin_borders, _ = plt.hist(
+        T, bins=np.linspace(np.min(T), np.max(T), bins)
+    )
+    bin_centers = bin_borders[:-1] + np.diff(bin_borders) / 2
+    plt.close()
+    return (bin_centers, bin_heights)
+
+
+def ROI_data(ROI, X, Y, T):
+    ROI_indices = (
+        (T > ROI["Tmin"])
+        & (T < ROI["Tmax"])
+        & (X > ROI["Xmin"])
+        & (X < ROI["Xmax"])
+        & (Y > ROI["Ymin"])
+        & (Y < ROI["Ymax"])
+    )
+    T_ROI = T[ROI_indices]
+    X_ROI = X[ROI_indices]
+    Y_ROI = Y[ROI_indices]
+    return (X_ROI, Y_ROI, T_ROI)
+
+
 # main
 def main(self):
     """
@@ -84,9 +108,6 @@ def main(self):
     with open(default_roi_file_name, encoding="utf8") as f:
         defaultroi = json.load(f)
 
-    # print(data.path)
-    # print(data.path.parent)
-    # print(list(data.path.parent.iterdir()))
     list_of_files = []
 
     currentDir = data.path.parent
@@ -100,15 +121,15 @@ def main(self):
     # gui layout
 
     fig2D, ax2D = plt.subplots(figsize=(6, 6))
-    ax2D.hist2d(X, Y, bins=np.linspace(-40, 40, 2 * 81), cmap=plt.cm.jet)
+    ax2D.hist2d(X, Y, bins=np.linspace(-40, 40, 160), cmap=plt.cm.jet)
     ax2D.set_xlabel("X")
     ax2D.set_ylabel("Y")
-    ax2D.grid(True)
 
     fig1D, ax1D = plt.subplots(figsize=(6, 3))
-    ax1D.hist(T_raw, bins=np.linspace(np.min(T_raw), np.max(T_raw), 300), color="black")
+    # ax1D.hist(T_raw, bins=np.linspace(np.min(T_raw), np.max(T_raw), 300), color="black")
     ax1D.hist(T, bins=np.linspace(0, np.max(T), 300), color="tab:blue")
     # ax1D.plot(bin_centers_raw, bin_heights_raw, linestyle="dotted", color="black")
+    ax1D.set_xlim(np.min(T), np.max(T))
     ax1D.set_xlabel("time (ms)")
     ax1D.set_ylabel("number of events")
 
@@ -129,31 +150,31 @@ def main(self):
         [
             sg.Text("Tmin"),
             sg.Input(
-                size=(6, 1), default_text=str(defaultroi["ROI 0"]["Tmin"]), key="Tmin0"
+                size=(6, 1), default_text=str(defaultroi["ROI 0"]["Tmin"]), key="Tmin"
             ),
             sg.Text("Tmax"),
             sg.Input(
-                size=(6, 1), default_text=str(defaultroi["ROI 0"]["Tmax"]), key="Tmax0"
+                size=(6, 1), default_text=str(defaultroi["ROI 0"]["Tmax"]), key="Tmax"
             ),
         ],
         [
             sg.Text("Xmin"),
             sg.Input(
-                size=(6, 1), default_text=str(defaultroi["ROI 0"]["Xmin"]), key="Xmin0"
+                size=(6, 1), default_text=str(defaultroi["ROI 0"]["Xmin"]), key="Xmin"
             ),
             sg.Text("Xmax"),
             sg.Input(
-                size=(6, 1), default_text=str(defaultroi["ROI 0"]["Xmax"]), key="Xmax0"
+                size=(6, 1), default_text=str(defaultroi["ROI 0"]["Xmax"]), key="Xmax"
             ),
         ],
         [
             sg.Text("Ymin"),
             sg.Input(
-                size=(6, 1), default_text=str(defaultroi["ROI 0"]["Ymin"]), key="Ymin0"
+                size=(6, 1), default_text=str(defaultroi["ROI 0"]["Ymin"]), key="Ymin"
             ),
             sg.Text("Ymax"),
             sg.Input(
-                size=(6, 1), default_text=str(defaultroi["ROI 0"]["Ymax"]), key="Ymax0"
+                size=(6, 1), default_text=str(defaultroi["ROI 0"]["Ymax"]), key="Ymax"
             ),
         ],
         [
@@ -164,11 +185,11 @@ def main(self):
             sg.Checkbox("XY", default=True, key="XY"),
             sg.Checkbox("XT", default=False, key="XT"),
             sg.Checkbox("YT", default=False, key="YT"),
-            sg.Checkbox("Grid", default=True, key="grid"),
         ],
         [
             sg.Text("Number of bins"),
             sg.Input(size=(6, 1), default_text=160, key="bins2D"),
+            sg.Checkbox("Grid", default=False, key="grid2D"),
         ],
         [
             sg.Combo(
@@ -183,11 +204,12 @@ def main(self):
             sg.Checkbox("T", default=True, key="T"),
             sg.Checkbox("X", default=False, key="X"),
             sg.Checkbox("Y", default=False, key="Y"),
-            sg.Checkbox("Grid", default=True, key="grid1D"),
+            sg.Checkbox("logscale", default=False, key="logscale"),
         ],
         [
             sg.Text("Number of bins"),
             sg.Input(size=(6, 1), default_text=300, key="bins1D"),
+            sg.Checkbox("Grid", default=False, key="grid1D"),
         ],
         [
             sg.Checkbox(
@@ -200,8 +222,7 @@ def main(self):
                 "Plot unreconstructed data", default=False, key="unreconstructed"
             )
         ],
-        [sg.Checkbox("logscale", default=False, key="logscale")],
-        [sg.Button("Update", button_color=("white", "green"))],
+        [sg.Button("Update", button_color=("white", "green"), key="update")],
     ]
 
     l2col2 = [[sg.Canvas(key="-CANVAS-")]]
@@ -276,10 +297,10 @@ def main(self):
     window = sg.Window("MCP visualizer tool", layout, finalize=True)
 
     # Associate fig with Canvas.
-    fig_agg = draw_figure(window["-CANVAS-"].TKCanvas, fig2D)
-    fig_agg.draw()
-    fig_agg = draw_figure(window["-CANVAS2-"].TKCanvas, fig1D)
-    fig_agg.draw()
+    fig_agg2D = draw_figure(window["-CANVAS-"].TKCanvas, fig2D)
+    fig_agg2D.draw()
+    fig_agg1D = draw_figure(window["-CANVAS2-"].TKCanvas, fig1D)
+    fig_agg1D.draw()
 
     # Initialize ROIs
     ROI0 = {}
@@ -299,30 +320,93 @@ def main(self):
         ):  # if user closes window or clicks cancel
             break
 
-        if event == "Watch ROIs":
-            ax[0].cla()
-            ax[1].cla()
+        if event == "update":
             if values["ROI0"]:
-                setROIvalues(ROI0, values, "0")
-                color = "tab:orange"
-                plotfigs(ax, X, Y, T, T_raw)
-                displayROIs(ax, color, ROI0, "ROI::0", values, "0")
-            if values["ROI1"]:
-                setROIvalues(ROI1, values, "1")
-                color = "tab:green"
-                plotfigs(ax, X, Y, T, T_raw)
-                displayROIs(ax, color, ROI1, "ROI::1", values, "1")
-            if values["ROI2"]:
-                setROIvalues(ROI2, values, "2")
-                color = "tab:red"
-                plotfigs(ax, X, Y, T, T_raw)
-                displayROIs(ax, color, ROI2, "ROI::2", values, "2")
-            if values["ROI3"]:
-                setROIvalues(ROI3, values, "3")
-                color = "tab:purple"
-                plotfigs(ax, X, Y, T, T_raw)
-                displayROIs(ax, color, ROI3, "ROI::3", values, "3")
-            fig_agg.draw()
+                Xdata, Ydata, Tdata = X, Y, T
+                ROI_dict = {}
+                ROI_dict["Tmin"] = float(values["Tmin"])
+                ROI_dict["Tmax"] = float(values["Tmax"])
+                ROI_dict["Xmin"] = float(values["Xmin"])
+                ROI_dict["Xmax"] = float(values["Xmax"])
+                ROI_dict["Ymin"] = float(values["Ymin"])
+                ROI_dict["Ymax"] = float(values["Ymax"])
+                (X, Y, T) = ROI_data(ROI_dict, X, Y, T)
+
+            ax1D.cla()
+            ax2D.cla()
+
+            bins = int(values["bins1D"])
+            if values["grid1D"]:
+                ax1D.grid(True)
+            if values["T"]:
+                if values["unreconstructed"]:
+                    ax1D.hist(
+                        T_raw,
+                        bins=np.linspace(np.min(T_raw), np.max(T_raw), bins),
+                        color="black",
+                    )
+                ax1D.hist(
+                    T, bins=np.linspace(np.min(T), np.max(T), bins), color="tab:blue"
+                )
+                ax1D.set_xlim(np.min(T), np.max(T))
+                ax1D.set_xlabel("time (ms)")
+                ax1D.set_ylabel("number of events")
+            if values["X"]:
+                ax1D.hist(X, bins=np.linspace(-40, 40, bins), color="tab:blue")
+                ax1D.set_xlim(-40, 40)
+                ax1D.set_xlabel("X (mm)")
+                ax1D.set_ylabel("number of events")
+            if values["Y"]:
+                ax1D.hist(Y, bins=np.linspace(-40, 40, bins), color="tab:blue")
+                ax1D.set_xlabel("Y (mm)")
+                ax1D.set_xlim(-40, 40)
+                ax1D.set_ylabel("number of events")
+            if values["max events enabled"]:
+                ax1D.set_ylim(0, float(values["max events"]))
+            if values["logscale"]:
+                ax1D.set_yscale("log")
+
+            if values["XY"]:
+                ax2D.hist2d(
+                    X,
+                    Y,
+                    bins=np.linspace(-40, 40, int(values["bins2D"])),
+                    cmap=plt.cm.jet,
+                )
+                ax2D.set_xlabel("X")
+                ax2D.set_ylabel("Y")
+            if values["XT"]:
+                ax2D.hist2d(
+                    X,
+                    T,
+                    bins=[
+                        np.linspace(-40, 40, int(values["bins2D"])),
+                        np.linspace(np.min(T), np.max(T), int(values["bins2D"])),
+                    ],
+                    cmap=plt.cm.jet,
+                )
+                ax2D.set_xlabel("X")
+                ax2D.set_ylabel("T")
+            if values["YT"]:
+                ax2D.hist2d(
+                    Y,
+                    T,
+                    bins=[
+                        np.linspace(-40, 40, int(values["bins2D"])),
+                        np.linspace(np.min(T), np.max(T), int(values["bins2D"])),
+                    ],
+                    cmap=plt.cm.jet,
+                )
+                ax2D.set_xlabel("Y")
+                ax2D.set_ylabel("T")
+            if values["grid2D"]:
+                ax2D.grid(True)
+
+            fig_agg1D.draw()
+            fig_agg2D.draw()
+
+            if values["ROI0"]:
+                X, Y, T = Xdata, Ydata, Tdata
 
         if event == "Ok":
             if values["set to default"]:
@@ -336,12 +420,6 @@ def main(self):
             get_enabled_rois(ROI0, ROI1, ROI2, ROI3, values)
             if ROI0["enabled"]:
                 setROIvalues(ROI0, values, "0")
-            if ROI1["enabled"]:
-                setROIvalues(ROI1, values, "1")
-            if ROI2["enabled"]:
-                setROIvalues(ROI2, values, "2")
-            if ROI3["enabled"]:
-                setROIvalues(ROI3, values, "3")
             break
     plt.close()
     window.close()
