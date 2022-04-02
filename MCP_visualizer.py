@@ -14,9 +14,11 @@ from PyQt5.QtCore import Qt
 from PyQt5 import QtCore
 from HAL.gui.dataexplorer import getSelectionMetaDataFromCache
 from pathlib import Path
-
+import pickle
+import io
 import json
 
+# https://pysimplegui.readthedocs.io/en/latest/#persistent-window-example-running-timer-that-updates
 logger = logging.getLogger(__name__)
 
 # /!\/!\/!\
@@ -35,6 +37,24 @@ def draw_figure(canvas, figure):
     figure_canvas_agg.draw()
     figure_canvas_agg.get_tk_widget().pack(side="top", fill="both", expand=1)
     return figure_canvas_agg
+
+
+def show_figure2D(fig):
+    # create a dummy figure and use its
+    # manager to display "fig"
+    dummy = plt.figure(figsize=(6, 6))
+    new_manager = dummy.canvas.manager
+    new_manager.canvas.figure = fig
+    fig.set_canvas(new_manager.canvas)
+
+
+def show_figure1D(fig):
+    # create a dummy figure and use its
+    # manager to display "fig"
+    dummy = plt.figure()
+    new_manager = dummy.canvas.manager
+    new_manager.canvas.figure = fig
+    fig.set_canvas(new_manager.canvas)
 
 
 def get_histo(T, bins):
@@ -119,7 +139,7 @@ def main(self):
 
     list_of_files.reverse()
     # gui layout
-
+    cmaps = [name for name in plt.colormaps() if not name.endswith("_r")]
     fig2D, ax2D = plt.subplots(figsize=(6, 6))
     ax2D.hist2d(X, Y, bins=np.linspace(-40, 40, 160), cmap=plt.cm.jet)
     ax2D.set_xlabel("X")
@@ -193,10 +213,10 @@ def main(self):
         ],
         [
             sg.Combo(
-                ["colormap 1", "colormap 2", "colormap 3"],
-                default_value="colormap 1",
+                cmaps,
+                default_value="jet",
                 enable_events=True,
-                key="combo",
+                key="colormap",
             )
         ],
         [sg.Text("1D graph options", font="Helvetica 10 bold", justification="center")],
@@ -237,10 +257,9 @@ def main(self):
     # l3col1 = [[sg.Button("testbouton")]]
     l3col2 = [[sg.Canvas(key="-CANVAS2-")]]
     l3col3 = [
-        [sg.Button("Open 2D graph"), sg.Button("Open 1D graph")],
-        [
-            sg.Button("Open 3D graph"),
-        ],
+        [sg.Button("Open 1D graph")],
+        [sg.Button("Open 2D graph")],
+        [sg.Button("Open 3D graph")],
     ]
 
     data_options_col = [
@@ -366,12 +385,15 @@ def main(self):
             if values["logscale"]:
                 ax1D.set_yscale("log")
 
+            if not values["colormap"] in cmaps:
+                break
+            cmap = plt.get_cmap(values["colormap"])
             if values["XY"]:
                 ax2D.hist2d(
                     X,
                     Y,
                     bins=np.linspace(-40, 40, int(values["bins2D"])),
-                    cmap=plt.cm.jet,
+                    cmap=cmap,
                 )
                 ax2D.set_xlabel("X")
                 ax2D.set_ylabel("Y")
@@ -383,7 +405,7 @@ def main(self):
                         np.linspace(-40, 40, int(values["bins2D"])),
                         np.linspace(np.min(T), np.max(T), int(values["bins2D"])),
                     ],
-                    cmap=plt.cm.jet,
+                    cmap=cmap,
                 )
                 ax2D.set_xlabel("X")
                 ax2D.set_ylabel("T")
@@ -395,7 +417,7 @@ def main(self):
                         np.linspace(-40, 40, int(values["bins2D"])),
                         np.linspace(np.min(T), np.max(T), int(values["bins2D"])),
                     ],
-                    cmap=plt.cm.jet,
+                    cmap=cmap,
                 )
                 ax2D.set_xlabel("Y")
                 ax2D.set_ylabel("T")
@@ -421,6 +443,30 @@ def main(self):
             if ROI0["enabled"]:
                 setROIvalues(ROI0, values, "0")
             break
+
+        if event == "Open 1D graph":
+            buf = io.BytesIO()
+            pickle.dump(fig1D, buf)
+            buf.seek(0)
+            fig2 = pickle.load(buf)
+            # fig_to_plot = fig2
+            show_figure1D(fig2)
+            fig2.show()
+        if event == "Open 2D graph":
+            buf = io.BytesIO()
+            pickle.dump(fig2D, buf)
+            buf.seek(0)
+            fig2 = pickle.load(buf)
+            show_figure2D(fig2)
+            fig2.show()
+        if event == "Open 3D graph":
+            fig3D = plt.figure()
+            ax = plt.axes(projection="3d")
+            ax.scatter3D(X, Y, T, marker=".")
+            plt.xlabel("X")
+            plt.ylabel("Y")
+            fig3D.show()
+
     plt.close()
     window.close()
     # now the ROIs are set
