@@ -66,6 +66,20 @@ def get_histo(T, bins):
     return (bin_centers, bin_heights)
 
 
+def generate_list(prefix):
+    u = []
+    for i in range(100):
+        k = i + 1
+        if len(str(k)) == 1:
+            u.append(prefix + "_00" + str(k))
+        elif len(str(k)) == 2:
+            u.append(prefix + "_0" + str(k))
+        else:
+            u.append(prefix + "_" + str(k))
+        # u.reverse()
+    return u
+
+
 def ROI_data(ROI, X, Y, T):
     ROI_indices = (
         (T > ROI["Tmin"])
@@ -153,10 +167,27 @@ def main(self):
     ax1D.set_xlabel("time (ms)")
     ax1D.set_ylabel("number of events")
 
-    data_col = [
-        [sg.Button(list_of_files[k], visible=True)] for k in range(len(list_of_files))
-    ]
+    all_buttons = generate_list(seq_number)
 
+    cycles_in_seq = len(list_of_files)
+    data_buttons = []
+    for k in range(len(all_buttons)):
+        if all_buttons[k] in list_of_files:
+            data_buttons.append(
+                [sg.Button(all_buttons[k], key=all_buttons[k][4:], visible=True)]
+            )
+        else:
+            data_buttons.append(
+                [
+                    sg.Button(
+                        all_buttons[k],
+                        key=all_buttons[k][4:],
+                        visible=False,
+                    )
+                ]
+            )
+    data_buttons.reverse()
+    data_col = data_buttons
     l2col1 = [
         [sg.Text("ROI selection", font="Helvetica 10 bold", justification="center")],
         [sg.Checkbox("Plot data from ROI", default=False, key="ROI0")],
@@ -461,13 +492,46 @@ def main(self):
             plt.xlabel("X")
             plt.ylabel("Y")
             fig3D.show()
+
         if event == "refresh":
             sequence = values["selected_seq"]
-            data_col = [
-                [sg.Button(list_of_files[k])] for k in range(len(list_of_files) - 3)
-            ]
-            window["123_011"].update("test")
+            # window["_123_011_"].Update("wesh la zone")
+            if sequence != seq_number:
+                seq_number = sequence
+                currentDir = data.path.parent.parent / str(seq_number)
+                for currentFile in currentDir.iterdir():
+                    if currentFile.suffix == ".atoms":
+                        list_of_files.append(currentFile.stem)
+                seq_dir = str(currentDir)
+                all_buttons_new = generate_list(seq_number)
+                for k in range(len(all_buttons)):
+                    window[all_buttons[k][4:]].update(all_buttons_new[k])
+                all_buttons = all_buttons_new
+                for k in range(len(all_buttons)):
+                    if all_buttons[k] in list_of_files:
+                        window[all_buttons[k][4:]].update(visible=True)
+                    else:
+                        window[all_buttons[k][4:]].update(visible=False)
+
+            if sequence == seq_number:
+                new_list_of_files = []
+                for currentFile in currentDir.iterdir():
+                    if currentFile.suffix == ".atoms":
+                        new_list_of_files.append(currentFile.stem)
+                # print(new_list_of_files)
+                for k in range(len(all_buttons)):
+                    if (all_buttons[k] in new_list_of_files) and (
+                        all_buttons[k] not in list_of_files
+                    ):
+                        window[all_buttons[k][4:]].update(visible=True)
+
+            # sequence = values["selected_seq"]
+            # data_col = [
+            #    [sg.Button(list_of_files[k])] for k in range(len(list_of_files) - 3)
+            # ]
+            # window["123_011"].update(visible=False)
             window.refresh()
+            window["cycles"].contents_changed()
 
     plt.close()
     window.close()
