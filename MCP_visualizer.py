@@ -154,14 +154,7 @@ def main(self):
     ax1D.set_ylabel("number of events")
 
     data_col = [
-        [
-            sg.Checkbox(
-                list_of_files[k],
-                default=False,
-                key=list_of_files[k],
-            )
-        ]
-        for k in range(len(list_of_files))
+        [sg.Button(list_of_files[k], visible=True)] for k in range(len(list_of_files))
     ]
 
     l2col1 = [
@@ -289,7 +282,9 @@ def main(self):
             sg.Input(size=(6, 1), default_text=seq_number, key="selected_seq"),
         ],
         [
-            sg.Column(data_col, scrollable=True, vertical_scroll_only=True),
+            sg.Column(
+                data_col, scrollable=True, vertical_scroll_only=True, key="cycles"
+            ),
             sg.Column(data_options_col),
         ],
     ]
@@ -466,6 +461,13 @@ def main(self):
             plt.xlabel("X")
             plt.ylabel("Y")
             fig3D.show()
+        if event == "refresh":
+            sequence = values["selected_seq"]
+            data_col = [
+                [sg.Button(list_of_files[k])] for k in range(len(list_of_files) - 3)
+            ]
+            window["123_011"].update("test")
+            window.refresh()
 
     plt.close()
     window.close()
