@@ -3,8 +3,6 @@
 import logging
 import numpy as np
 import pandas as pd
-from scipy.optimize import curve_fit
-from datetime import datetime
 from PyQt5.QtWidgets import QInputDialog
 from PyQt5.QtCore import Qt
 from PyQt5 import QtCore
@@ -19,7 +17,7 @@ logger = logging.getLogger(__name__)
 # /!\/!\/!\
 # in order to be imported as a user script, two "global" variables
 # have to be defined: NAME and CATEGORY
-NAME = "7. BEC temperature"  # display name, used in menubar and command palette
+NAME = "Pair variances"  # display name, used in menubar and command palette
 CATEGORY = "MCP"  # category (note that CATEGORY="" is a valid choice)
 
 k_B = 1.3806e-23
@@ -35,38 +33,6 @@ def read_metadata(metadata, nb):
     Tmin = metadata["current selection"]["mcp"]["--ROI" + nb + ":Tmin"][0]
     Tmax = metadata["current selection"]["mcp"]["--ROI" + nb + ":Tmax"][0]
     return (Xmin, Xmax, Ymin, Ymax, Tmin, Tmax)
-
-
-def gaussian(x, mean, amplitude, standard_deviation):
-    return amplitude * np.exp(-((x - mean) ** 2) / (2 * standard_deviation**2))
-
-
-def fit_time_histo(T):
-    bin_heights, bin_borders, _ = plt.hist(
-        T, bins=np.linspace(np.min(T), np.max(T), 300)
-    )
-    bin_centers = bin_borders[:-1] + np.diff(bin_borders) / 2
-
-    guess_amplitude = np.max(bin_heights)
-    guess_mean = bin_centers[list(bin_heights).index(np.max(bin_heights))]
-    guess_stdev = 5.0
-    p0 = [guess_mean, guess_amplitude, guess_stdev]
-    popt, pcov = curve_fit(gaussian, bin_centers, bin_heights, p0=p0)
-    return (popt, pcov)
-
-
-def fit_transverse_distribution_Y(Y):
-    bin_heights, bin_borders, _ = plt.hist(
-        Y, bins=np.linspace(np.min(Y), np.max(Y), 300)
-    )
-    bin_centers = bin_borders[:-1] + np.diff(bin_borders) / 2
-
-    guess_amplitude = np.max(bin_heights)
-    guess_mean = bin_centers[list(bin_heights).index(np.max(bin_heights))]
-    guess_stdev = 5.0
-    p0 = [guess_mean, guess_amplitude, guess_stdev]
-    popt, pcov = curve_fit(gaussian, bin_centers, bin_heights, p0=p0)
-    return (popt, pcov)
 
 
 def exportROIinfo(to_mcp, ROI, nb):
@@ -276,171 +242,110 @@ def main(self):
     df = pd.DataFrame({"X": X, "Y": Y, "T": T})
     del X, Y, T
 
-    # print(np.histogram(df["T"], bins=400))
     # fig2 = plt.figure()
     # plt.hist(
     #     df["T"],
-    #     bins=np.linspace(df["T"].min(), df["T"].max(), 1000),
+    #     bins="auto",
     #     histtype="step",
     #     log=True,
     # )
-    # plt.xlabel("time (ms)")
+    # plt.xlabel("T (mm)")
     # plt.ylabel("number of events")
     # plt.grid(True)
     # fig2.show()
 
-    fig2 = plt.figure()
-    plt.hist(
-        df["Y"],
-        bins="auto",
-        histtype="step",
-        log=True,
-    )
-    plt.xlabel("Y (mm)")
-    plt.ylabel("number of events")
-    plt.grid(True)
-    fig2.show()
-
     # filtering
-    left_wing_min = 299.2
-    right_wing_max = 317.2
-    center = 307.9
-    bec_widths = np.linspace(0.5, 6, 20)
-    temperatures_t = []
-    sigma_temperatures_t = []
-    temperatures_Y = []
-    sigma_temperatures_Y = []
 
-    for bec_width in bec_widths:
+    # large temporal box
+    df = df.loc[(df["T"] > 309.0) & (df["T"] < 326.5)]
 
-        df_left_wing = df.loc[
-            ((df["T"] > left_wing_min) & (df["T"] < center - bec_width))
-        ]
-        df_right_wing = df.loc[
-            ((df["T"] > center + bec_width) & (df["T"] < right_wing_max))
-        ]
+    fig, axs = plt.subplots(1, 2)
 
-        df_wings = pd.concat([df_left_wing, df_right_wing], ignore_index=True)
-        Y_bin = np.histogram(df_wings["Y"], bins="auto")
-        Y_bin_centers = Y_bin[1][:-1] + np.diff(Y_bin[1]) / 2
-        Y_sigma_bin = np.sqrt(Y_bin[0])
-
-        T_bin_left = np.histogram(df_left_wing["T"], bins="auto")
-        T_sigma_bin_left = np.sqrt(T_bin_left[0]) / (
-            T_bin_left[0].max() - T_bin_left[0].min()
-        )
-
-        T_bin_right = np.histogram(df_right_wing["T"], bins="auto")
-        T_sigma_bin_right = np.sqrt(T_bin_right[0]) / (
-            T_bin_right[0].max() - T_bin_right[0].min()
-        )
-
-        T_bin_left_norm = np.interp(
-            T_bin_left[0], (T_bin_left[0].min(), T_bin_left[0].max()), (0.0, 1.0)
-        )
-        T_bin_left_centers = T_bin_left[1][:-1] + np.diff(T_bin_left[1]) / 2
-
-        T_bin_right_norm = np.interp(
-            T_bin_right[0], (T_bin_right[0].min(), T_bin_right[0].max()), (0.0, 1.0)
-        )
-        T_bin_right_centers = T_bin_right[1][:-1] + np.diff(T_bin_right[1]) / 2
-
-        T_binned_wings_norm = np.array(
-            [
-                np.concatenate([T_bin_left_centers, T_bin_right_centers]),
-                np.concatenate([T_bin_left_norm, T_bin_right_norm]),
-                np.concatenate([T_sigma_bin_left, T_sigma_bin_right]),
-            ]
-        )
-
-        # time fit
-        guess_amplitude = np.max(T_binned_wings_norm[1])
-        guess_mean = center
-        guess_stdev = 1.0
-        p0 = [guess_mean, guess_amplitude, guess_stdev]
-        popt, pcov = curve_fit(
-            gaussian,
-            T_binned_wings_norm[0],
-            T_binned_wings_norm[1],
-            p0=p0,
-            sigma=T_binned_wings_norm[2],
-        )
-        perr = np.sqrt(np.diag(pcov))
-
-        temperature_t = m * (g**2) * ((popt[2]) ** 2) / k_B
-        sigma_temperature_t = 2 * temperature_t * perr[2] / popt[2]
-        temperatures_t.append(temperature_t)
-        sigma_temperatures_t.append(sigma_temperature_t)
-
-        # spatial fit
-        guess_amplitude = np.max(Y_bin[1])
-        guess_mean = 0.0
-        guess_stdev = 1.0
-        p0 = [guess_mean, guess_amplitude, guess_stdev]
-        popt, pcov = curve_fit(
-            gaussian,
-            Y_bin[0],
-            Y_bin_centers,
-            p0=p0,
-            sigma=Y_sigma_bin,
-        )
-        perr = np.sqrt(np.diag(pcov))
-
-        temperature_Y = (m / k_B) * (popt[2] / center) ** 2
-        sigma_temperature_Y = 2 * temperature_Y * perr[2] / popt[2]
-        temperatures_Y.append(temperature_Y)
-        sigma_temperatures_Y.append(sigma_temperature_Y)
-
-    fig = plt.figure()
-    plt.errorbar(bec_widths, temperatures_t, yerr=sigma_temperatures_t, fmt="o")
-    plt.xlabel("BEC truncated width (ms)")
-    plt.ylabel("Temperature (µK)")
-    plt.grid(True)
-    plt.show()
-
-    fig = plt.figure()
-    plt.errorbar(bec_widths, temperatures_Y, yerr=sigma_temperatures_Y, fmt="o")
-    plt.xlabel("BEC truncated width (ms)")
-    plt.ylabel("Temperature (K)")
-    plt.grid(True)
-    plt.show()
-
-    # fig3 = plt.figure()
-    # plt.hist(
-    #     df_left_wing["T"],
-    #     bins=np.linspace(df_left_wing["T"].min(), df_left_wing["T"].max(), 100),
-    #     histtype="step",
-    #     log=False,
-    #     density=True,
-    # )
-    # plt.hist(
-    #     df_right_wing["T"],
-    #     bins=np.linspace(df_right_wing["T"].min(), df_right_wing["T"].max(), 100),
-    #     histtype="step",
-    #     log=False,
-    #     density=True,
-    # )
-    # plt.xlabel("time (ms)")
-    # plt.ylabel("number of events")
-    # plt.grid(True)
-    # fig3.show()
-
-    # fig4 = plt.figure()
-    # plt.plot(bin_left_centers, bin_left_norm)
-    # plt.plot(bin_right_centers, bin_right_norm)
-    # fig4.show()
-
-    # fig4 = plt.figure()
-    # plt.plot(binned_wings_norm[0], binned_wings_norm[1])
-    # fig4.show()
-
-    fig4 = plt.figure()
-    plt.hist(
-        df_wings["Y"],
-        bins="auto",
-        histtype="step",
+    axs[0].hist2d(
+        df["X"],
+        df["T"],
+        bins=[40, 100],
     )
-    plt.xlabel("Y (mm)")
-    plt.ylabel("number of events")
-    plt.grid(True)
-    fig4.show()
+    axs[0].set(xlabel="X (mm)")
+    axs[0].set(ylabel="T (ms)")
+
+    axs[1].hist2d(
+        df["Y"],
+        df["T"],
+        bins=[40, 100],
+    )
+    axs[1].set(xlabel="Y (mm)")
+    axs[1].set(ylabel="T (ms)")
+    fig.show()
+
+    # small boxes
+    spatial_width = 5.0
+    temporal_width = 0.1
+
+    box1_temporal_center = 310.0
+    box2_temporal_centers = np.linspace(320, 326, 10)
+
+    box_spatial_center_X = -13.0
+    box_spatial_center_Y = 0.0
+
+    df_correlations = pd.DataFrame(columns=["box2_temporal_center", "Variance"])
+    for box2_temporal_center in box2_temporal_centers:
+
+        DeltaN = []
+        SumN = []
+
+        for k in range(len(selection) - 1):
+            item = selection[k]
+            data.path = item.data(QtCore.Qt.UserRole)
+            if not data.path.suffix == ".atoms":
+                return
+            # get data
+            Xa, Ya, Ta = data.getrawdata()
+            df = pd.DataFrame({"X": Xa, "Y": Ya, "T": Ta})
+
+            df_box1 = df.loc[
+                (df["T"] > box1_temporal_center - 0.5 * temporal_width)
+                & (df["T"] < box1_temporal_center + 0.5 * temporal_width)
+                & (df["X"] > box_spatial_center_X - 0.5 * spatial_width)
+                & (df["X"] < box_spatial_center_X + 0.5 * spatial_width)
+                & (df["Y"] > box_spatial_center_Y - 0.5 * spatial_width)
+                & (df["Y"] < box_spatial_center_Y + 0.5 * spatial_width)
+            ]
+
+            df_box2 = df.loc[
+                (df["T"] > box2_temporal_center - 0.5 * temporal_width)
+                & (df["T"] < box2_temporal_center + 0.5 * temporal_width)
+                & (df["X"] > box_spatial_center_X - 0.5 * spatial_width)
+                & (df["X"] < box_spatial_center_X + 0.5 * spatial_width)
+                & (df["Y"] > box_spatial_center_Y - 0.5 * spatial_width)
+                & (df["Y"] < box_spatial_center_Y + 0.5 * spatial_width)
+            ]
+
+            DeltaN.append(len(df_box1) - len(df_box2))
+            SumN.append(len(df_box1) + len(df_box2))
+
+        DeltaN = np.array(DeltaN)
+        SumN = np.array(SumN)
+        var = np.var(DeltaN) / np.mean(SumN)
+        df_correlations = pd.concat(
+            [
+                df_correlations,
+                pd.DataFrame(
+                    [[box2_temporal_center, var]],
+                    columns=["box2_temporal_center", "Variance"],
+                ),
+            ],
+            ignore_index=True,
+        )
+
+    fig = plt.figure()
+    plt.plot(df_correlations["box2_temporal_center"], df_correlations["Variance"])
+    plt.show()
+    # left_wing_min = 299.2
+    # right_wing_max = 317.2
+    # center = 307.9
+    # bec_widths = np.linspace(0.5, 6, 20)
+    # temperatures_t = []
+    # sigma_temperatures_t = []
+    # temperatures_Y = []
+    # sigma_temperatures_Y = []
