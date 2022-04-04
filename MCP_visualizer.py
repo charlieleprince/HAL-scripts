@@ -95,6 +95,97 @@ def ROI_data(ROI, X, Y, T):
     return (X_ROI, Y_ROI, T_ROI)
 
 
+def update_plot(values, X, Y, T, T_raw, ax1D, fig_agg1D, ax2D, fig_agg2D):
+    cmaps = [name for name in plt.colormaps() if not name.endswith("_r")]
+    if values["ROI0"]:
+        Xdata, Ydata, Tdata = X, Y, T
+        ROI_dict = {}
+        ROI_dict["Tmin"] = float(values["Tmin"])
+        ROI_dict["Tmax"] = float(values["Tmax"])
+        ROI_dict["Xmin"] = float(values["Xmin"])
+        ROI_dict["Xmax"] = float(values["Xmax"])
+        ROI_dict["Ymin"] = float(values["Ymin"])
+        ROI_dict["Ymax"] = float(values["Ymax"])
+        (X, Y, T) = ROI_data(ROI_dict, X, Y, T)
+
+    ax1D.cla()
+    ax2D.cla()
+
+    bins = int(values["bins1D"])
+    if values["grid1D"]:
+        ax1D.grid(True)
+    if values["T"]:
+        if values["unreconstructed"]:
+            ax1D.hist(
+                T_raw,
+                bins=np.linspace(np.min(T_raw), np.max(T_raw), bins),
+                color="black",
+            )
+        ax1D.hist(T, bins=np.linspace(np.min(T), np.max(T), bins), color="tab:blue")
+        ax1D.set_xlim(np.min(T), np.max(T))
+        ax1D.set_xlabel("time (ms)")
+        ax1D.set_ylabel("number of events")
+    if values["X"]:
+        ax1D.hist(X, bins=np.linspace(-40, 40, bins), color="tab:blue")
+        ax1D.set_xlim(-40, 40)
+        ax1D.set_xlabel("X (mm)")
+        ax1D.set_ylabel("number of events")
+    if values["Y"]:
+        ax1D.hist(Y, bins=np.linspace(-40, 40, bins), color="tab:blue")
+        ax1D.set_xlabel("Y (mm)")
+        ax1D.set_xlim(-40, 40)
+        ax1D.set_ylabel("number of events")
+    if values["max events enabled"]:
+        ax1D.set_ylim(0, float(values["max events"]))
+    if values["logscale"]:
+        ax1D.set_yscale("log")
+
+    if not values["colormap"] in cmaps:
+        return
+    cmap = plt.get_cmap(values["colormap"])
+    if values["XY"]:
+        ax2D.hist2d(
+            X,
+            Y,
+            bins=np.linspace(-40, 40, int(values["bins2D"])),
+            cmap=cmap,
+        )
+        ax2D.set_xlabel("X")
+        ax2D.set_ylabel("Y")
+    if values["XT"]:
+        ax2D.hist2d(
+            X,
+            T,
+            bins=[
+                np.linspace(-40, 40, int(values["bins2D"])),
+                np.linspace(np.min(T), np.max(T), int(values["bins2D"])),
+            ],
+            cmap=cmap,
+        )
+        ax2D.set_xlabel("X")
+        ax2D.set_ylabel("T")
+    if values["YT"]:
+        ax2D.hist2d(
+            Y,
+            T,
+            bins=[
+                np.linspace(-40, 40, int(values["bins2D"])),
+                np.linspace(np.min(T), np.max(T), int(values["bins2D"])),
+            ],
+            cmap=cmap,
+        )
+        ax2D.set_xlabel("Y")
+        ax2D.set_ylabel("T")
+    if values["grid2D"]:
+        ax2D.grid(True)
+
+    fig_agg1D.draw()
+    fig_agg2D.draw()
+
+    if values["ROI0"]:
+        X, Y, T = Xdata, Ydata, Tdata
+
+
 # main
 def main(self):
     """
@@ -372,95 +463,7 @@ def main(self):
             break
 
         if event == "update":
-            if values["ROI0"]:
-                Xdata, Ydata, Tdata = X, Y, T
-                ROI_dict = {}
-                ROI_dict["Tmin"] = float(values["Tmin"])
-                ROI_dict["Tmax"] = float(values["Tmax"])
-                ROI_dict["Xmin"] = float(values["Xmin"])
-                ROI_dict["Xmax"] = float(values["Xmax"])
-                ROI_dict["Ymin"] = float(values["Ymin"])
-                ROI_dict["Ymax"] = float(values["Ymax"])
-                (X, Y, T) = ROI_data(ROI_dict, X, Y, T)
-
-            ax1D.cla()
-            ax2D.cla()
-
-            bins = int(values["bins1D"])
-            if values["grid1D"]:
-                ax1D.grid(True)
-            if values["T"]:
-                if values["unreconstructed"]:
-                    ax1D.hist(
-                        T_raw,
-                        bins=np.linspace(np.min(T_raw), np.max(T_raw), bins),
-                        color="black",
-                    )
-                ax1D.hist(
-                    T, bins=np.linspace(np.min(T), np.max(T), bins), color="tab:blue"
-                )
-                ax1D.set_xlim(np.min(T), np.max(T))
-                ax1D.set_xlabel("time (ms)")
-                ax1D.set_ylabel("number of events")
-            if values["X"]:
-                ax1D.hist(X, bins=np.linspace(-40, 40, bins), color="tab:blue")
-                ax1D.set_xlim(-40, 40)
-                ax1D.set_xlabel("X (mm)")
-                ax1D.set_ylabel("number of events")
-            if values["Y"]:
-                ax1D.hist(Y, bins=np.linspace(-40, 40, bins), color="tab:blue")
-                ax1D.set_xlabel("Y (mm)")
-                ax1D.set_xlim(-40, 40)
-                ax1D.set_ylabel("number of events")
-            if values["max events enabled"]:
-                ax1D.set_ylim(0, float(values["max events"]))
-            if values["logscale"]:
-                ax1D.set_yscale("log")
-
-            if not values["colormap"] in cmaps:
-                break
-            cmap = plt.get_cmap(values["colormap"])
-            if values["XY"]:
-                ax2D.hist2d(
-                    X,
-                    Y,
-                    bins=np.linspace(-40, 40, int(values["bins2D"])),
-                    cmap=cmap,
-                )
-                ax2D.set_xlabel("X")
-                ax2D.set_ylabel("Y")
-            if values["XT"]:
-                ax2D.hist2d(
-                    X,
-                    T,
-                    bins=[
-                        np.linspace(-40, 40, int(values["bins2D"])),
-                        np.linspace(np.min(T), np.max(T), int(values["bins2D"])),
-                    ],
-                    cmap=cmap,
-                )
-                ax2D.set_xlabel("X")
-                ax2D.set_ylabel("T")
-            if values["YT"]:
-                ax2D.hist2d(
-                    Y,
-                    T,
-                    bins=[
-                        np.linspace(-40, 40, int(values["bins2D"])),
-                        np.linspace(np.min(T), np.max(T), int(values["bins2D"])),
-                    ],
-                    cmap=cmap,
-                )
-                ax2D.set_xlabel("Y")
-                ax2D.set_ylabel("T")
-            if values["grid2D"]:
-                ax2D.grid(True)
-
-            fig_agg1D.draw()
-            fig_agg2D.draw()
-
-            if values["ROI0"]:
-                X, Y, T = Xdata, Ydata, Tdata
+            update_plot(values, X, Y, T, T_raw, ax1D, fig_agg1D, ax2D, fig_agg2D)
 
         if event == "Ok":
             if values["set to default"]:
@@ -534,7 +537,7 @@ def main(self):
                         all_buttons[k] not in list_of_files
                     ):
                         window[all_buttons[k][4:]].update(visible=True)
-                window["cycles"].Widget.canvas.yview_moveto(0.3)
+                window["cycles"].Widget.canvas.yview_moveto(0.0)
 
             # sequence = values["selected_seq"]
             # data_col = [
