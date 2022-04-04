@@ -31,6 +31,31 @@ CATEGORY = "MCP"  # category (note that CATEGORY="" is a valid choice)
 # sg.theme("DarkBlack")
 sg.theme("LightGrey1")
 
+
+def getrawdata(path):
+    """loads data"""
+    time_resolution = 1.2e-10
+    time_to_pos = 2 * 0.98e-9
+    atoms_file = np.fromfile(path, dtype="uint64")
+    times_file_path = str(path.parent) + "/" + str(path.stem) + ".times"
+    times_file = np.fromfile(times_file_path, dtype="uint64")
+    times = times_file * time_resolution
+    atoms = atoms_file * time_resolution
+
+    events_list = atoms.reshape(int(len(atoms) / 4), 4).T
+
+    Xmcp = (events_list[1] - events_list[0]) / time_to_pos
+    Ymcp = (events_list[3] - events_list[2]) / time_to_pos
+
+    X = (Xmcp + Ymcp) / np.sqrt(2)
+    Y = (Ymcp - Xmcp) / np.sqrt(2)
+    T = (events_list[0] + events_list[1] + events_list[2] + events_list[3]) / 4
+
+    T = T * 1e3
+    T_raw = times * 1e3
+    return (X, Y, T, T_raw)
+
+
 # https://stackoverflow.com/questions/66662800/update-element-using-a-function-pysimplegui
 def draw_figure(canvas, figure):
     figure_canvas_agg = FigureCanvasTkAgg(figure, canvas)
@@ -66,9 +91,9 @@ def get_histo(T, bins):
     return (bin_centers, bin_heights)
 
 
-def generate_list(prefix):
+def generate_list(prefix, nbfiles):
     u = []
-    for i in range(100):
+    for i in range(nbfiles):
         k = i + 1
         if len(str(k)) == 1:
             u.append(prefix + "_00" + str(k))
@@ -258,7 +283,8 @@ def main(self):
     ax1D.set_xlabel("time (ms)")
     ax1D.set_ylabel("number of events")
 
-    all_buttons = generate_list(seq_number)
+    nbfiles = 100
+    all_buttons = generate_list(seq_number, nbfiles)
 
     cycles_in_seq = len(list_of_files)
     data_buttons = []
@@ -515,7 +541,7 @@ def main(self):
                     if currentFile.suffix == ".atoms":
                         list_of_files.append(currentFile.stem)
                 seq_dir = str(currentDir)
-                all_buttons_new = generate_list(seq_number)
+                all_buttons_new = generate_list(seq_number, nbfiles)
                 for k in range(len(all_buttons)):
                     window[all_buttons[k][4:]].update(all_buttons_new[k])
                 all_buttons = all_buttons_new
@@ -546,6 +572,16 @@ def main(self):
             # window["123_011"].update(visible=False)
             window.refresh()
             window["cycles"].contents_changed()
+        for k in range(nbfiles):
+            if event == all_buttons[k][4:]:
+                new_path = (
+                    data.path.parent.parent
+                    / str(all_buttons[k][:3])
+                    / (str(all_buttons[k]) + ".atoms")
+                )
+                data.path = new_path
+                (X, Y, T, T_raw) = getrawdata(new_path)
+                update_plot(values, X, Y, T, T_raw, ax1D, fig_agg1D, ax2D, fig_agg2D)
 
     plt.close()
     window.close()
