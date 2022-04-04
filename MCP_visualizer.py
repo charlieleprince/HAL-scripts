@@ -149,7 +149,7 @@ def main(self):
         if currentFile.suffix == ".atoms":
             list_of_files.append(currentFile.stem)
     seq_dir = str(currentDir)
-    seq_number = seq_dir.split("\\")[len(seq_dir.split("\\")) - 1]
+    seq_number = str(currentDir.name)
 
     list_of_files.reverse()
     # gui layout
@@ -314,7 +314,11 @@ def main(self):
         ],
         [
             sg.Column(
-                data_col, scrollable=True, vertical_scroll_only=True, key="cycles"
+                data_col,
+                size=(100, 250),
+                scrollable=True,
+                vertical_scroll_only=True,
+                key="cycles",
             ),
             sg.Column(data_options_col),
         ],
@@ -340,6 +344,8 @@ def main(self):
 
     # Create the Window
     window = sg.Window("MCP visualizer tool", layout, finalize=True)
+    window.refresh()
+    window["cycles"].contents_changed()
 
     # Associate fig with Canvas.
     fig_agg2D = draw_figure(window["-CANVAS-"].TKCanvas, fig2D)
@@ -499,6 +505,9 @@ def main(self):
             if sequence != seq_number:
                 seq_number = sequence
                 currentDir = data.path.parent.parent / str(seq_number)
+                list_of_files = []
+                if not currentDir.exists():
+                    break
                 for currentFile in currentDir.iterdir():
                     if currentFile.suffix == ".atoms":
                         list_of_files.append(currentFile.stem)
@@ -512,6 +521,7 @@ def main(self):
                         window[all_buttons[k][4:]].update(visible=True)
                     else:
                         window[all_buttons[k][4:]].update(visible=False)
+                window["cycles"].Widget.canvas.yview_moveto(1.0)
 
             if sequence == seq_number:
                 new_list_of_files = []
@@ -524,6 +534,7 @@ def main(self):
                         all_buttons[k] not in list_of_files
                     ):
                         window[all_buttons[k][4:]].update(visible=True)
+                window["cycles"].Widget.canvas.yview_moveto(0.3)
 
             # sequence = values["selected_seq"]
             # data_col = [
