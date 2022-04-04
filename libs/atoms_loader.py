@@ -1,13 +1,11 @@
 # -*- coding: utf-8 -*-
 
-import chunk
 from pathlib import Path
 import itertools as itt
 import collections
 from multiprocessing import Pool, cpu_count
 import pandas as pd
 import numpy as np
-from PyQt5 import QtCore
 
 
 N_proc = cpu_count() - 2
