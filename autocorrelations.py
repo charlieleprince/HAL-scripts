@@ -11,9 +11,9 @@ from pathlib import Path
 # third party imports
 # -------------------
 # Qt
-from PyQt5.QtWidgets import QInputDialog
-from PyQt5.QtCore import Qt
 from PyQt5 import QtCore
+from PyQt5.QtCore import Qt
+from PyQt5.QtWidgets import QInputDialog
 
 # misc.
 import numpy as np
@@ -22,16 +22,15 @@ from matplotlib import pyplot as plt
 
 # local libs
 from HAL.gui.dataexplorer import getSelectionMetaDataFromCache
-from metadata.roi import read_metadata, exportROIinfo, ROIdata, ROI_data
+from metadata.roi import read_metadata, exportROIinfo, filter_data_to_ROI
 from metadata.constants import *
 
 # --------------------------------------------------------------------------------------
 
-
 # /!\/!\/!\
 # in order to be imported as a user script, two "global" variables
 # have to be defined: NAME and CATEGORY
-NAME = "Pair variances"  # display name, used in menubar and command palette
+NAME = "Autocorrelations"  # display name, used in menubar and command palette
 CATEGORY = "MCP"  # category (note that CATEGORY="" is a valid choice)
 logger = logging.getLogger(__name__)
 
@@ -49,7 +48,6 @@ def main(self):
     selection = self.runList.selectedItems()
     if not selection:
         return
-
     # -- init object data
     # get object data type
     data_class = self.dataTypeComboBox.currentData()
@@ -60,23 +58,25 @@ def main(self):
     default_roi_file_name = default_roi_dir / "default_mcp_roi.json"
 
     item = selection[0]
-    data.path = item.data(QtCore.Qt.UserRole)
+    data.path = item.data(Qt.UserRole)
     X, Y, T = data.getrawdata()
     if "N_ROI0" in metadata["current selection"]["mcp"]:
-        (X, Y, T) = ROIdata(metadata, "0", X, Y, T)
+        (X, Y, T) = filter_data_to_ROI(
+            X, Y, T, from_metadata=True, metadata=metadata, metadata_ROI_nb=0
+        )
     else:
         with open(default_roi_file_name, encoding="utf8") as f:
-            defaultroi = json.load(f)
+            default_roi = json.load(f)
 
-        ROI0 = {}
-        ROI0["Xmin"] = defaultroi["ROI 0"]["Xmin"]
-        ROI0["Xmax"] = defaultroi["ROI 0"]["Xmax"]
-        ROI0["Ymin"] = defaultroi["ROI 0"]["Ymin"]
-        ROI0["Ymax"] = defaultroi["ROI 0"]["Ymax"]
-        ROI0["Tmin"] = defaultroi["ROI 0"]["Tmin"]
-        ROI0["Tmax"] = defaultroi["ROI 0"]["Tmax"]
-
-        (X, Y, T) = ROI_data(ROI0, X, Y, T)
+        def_ROI = {
+            "Xmin": default_roi["ROI 0"]["Xmin"],
+            "Xmax": default_roi["ROI 0"]["Xmax"],
+            "Ymin": default_roi["ROI 0"]["Ymin"],
+            "Ymax": default_roi["ROI 0"]["Ymax"],
+            "Tmin": default_roi["ROI 0"]["Tmin"],
+            "Tmax": default_roi["ROI 0"]["Tmax"],
+        }
+        (X, Y, T) = filter_data_to_ROI(X, Y, T, from_metadata=False, ROI=def_ROI)
 
         to_mcp_dictionary = []
         to_mcp_dictionary.append(
@@ -88,7 +88,7 @@ def main(self):
                 "comment": "",
             }
         )
-        exportROIinfo(to_mcp_dictionary, ROI0, 0)
+        exportROIinfo(to_mcp_dictionary, def_ROI, 0)
 
         MCP_stats_folder = data.path.parent / ".MCPstats"
         MCP_stats_folder.mkdir(exist_ok=True)
@@ -98,7 +98,7 @@ def main(self):
 
     for k in range(len(selection) - 1):
         item = selection[k]
-        data.path = item.data(QtCore.Qt.UserRole)
+        data.path = item.data(Qt.UserRole)
         if not data.path.suffix == ".atoms":
             return
         # get data
@@ -144,18 +144,6 @@ def main(self):
     df = pd.DataFrame({"X": X, "Y": Y, "T": T})
     del X, Y, T
 
-    # fig2 = plt.figure()
-    # plt.hist(
-    #     df["T"],
-    #     bins="auto",
-    #     histtype="step",
-    #     log=True,
-    # )
-    # plt.xlabel("T (mm)")
-    # plt.ylabel("number of events")
-    # plt.grid(True)
-    # fig2.show()
-
     # filtering
 
     # large temporal box
@@ -198,7 +186,7 @@ def main(self):
 
         for k in range(len(selection) - 1):
             item = selection[k]
-            data.path = item.data(QtCore.Qt.UserRole)
+            data.path = item.data(Qt.UserRole)
             if not data.path.suffix == ".atoms":
                 return
             # get data
@@ -243,11 +231,3 @@ def main(self):
     fig = plt.figure()
     plt.plot(df_correlations["box2_temporal_center"], df_correlations["Variance"])
     plt.show()
-    # left_wing_min = 299.2
-    # right_wing_max = 317.2
-    # center = 307.9
-    # bec_widths = np.linspace(0.5, 6, 20)
-    # temperatures_t = []
-    # sigma_temperatures_t = []
-    # temperatures_Y = []
-    # sigma_temperatures_Y = []
