@@ -2,12 +2,12 @@ import numpy as np
 
 
 def read_metadata(metadata, nb):
-    Xmin = metadata["current selection"]["mcp"]["--ROI" + nb + ":Xmin"][0]
-    Xmax = metadata["current selection"]["mcp"]["--ROI" + nb + ":Xmax"][0]
-    Ymin = metadata["current selection"]["mcp"]["--ROI" + nb + ":Ymin"][0]
-    Ymax = metadata["current selection"]["mcp"]["--ROI" + nb + ":Ymax"][0]
-    Tmin = metadata["current selection"]["mcp"]["--ROI" + nb + ":Tmin"][0]
-    Tmax = metadata["current selection"]["mcp"]["--ROI" + nb + ":Tmax"][0]
+    Xmin = metadata["current selection"]["mcp"]["--ROI" + str(nb) + ":Xmin"][0]
+    Xmax = metadata["current selection"]["mcp"]["--ROI" + str(nb) + ":Xmax"][0]
+    Ymin = metadata["current selection"]["mcp"]["--ROI" + str(nb) + ":Ymin"][0]
+    Ymax = metadata["current selection"]["mcp"]["--ROI" + str(nb) + ":Ymax"][0]
+    Tmin = metadata["current selection"]["mcp"]["--ROI" + str(nb) + ":Tmin"][0]
+    Tmax = metadata["current selection"]["mcp"]["--ROI" + str(nb) + ":Tmax"][0]
     return (Xmin, Xmax, Ymin, Ymax, Tmin, Tmax)
 
 

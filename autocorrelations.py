@@ -11,9 +11,7 @@ from pathlib import Path
 # third party imports
 # -------------------
 # Qt
-from PyQt5 import QtCore
 from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QInputDialog
 
 # misc.
 import numpy as np
@@ -22,8 +20,8 @@ from matplotlib import pyplot as plt
 
 # local libs
 from HAL.gui.dataexplorer import getSelectionMetaDataFromCache
-from metadata.roi import read_metadata, exportROIinfo, filter_data_to_ROI
-from metadata.constants import *
+from .libs.roi import exportROIinfo, filter_data_to_ROI
+from .libs.constants import *
 
 # --------------------------------------------------------------------------------------
 
@@ -104,20 +102,25 @@ def main(self):
         # get data
         Xa, Ya, Ta = data.getrawdata()
         if "N_ROI0" in metadata["current selection"]["mcp"]:
-            (Xa, Ya, Ta) = ROIdata(metadata, "0", Xa, Ya, Ta)
+            (Xa, Ya, Ta) = filter_data_to_ROI(
+                Xa, Ya, Ta, from_metadata=True, metadata=metadata, metadata_ROI_nb=0
+            )
         else:
             with open(default_roi_file_name, encoding="utf8") as f:
-                defaultroi = json.load(f)
+                default_roi = json.load(f)
 
-            ROI0 = {}
-            ROI0["Xmin"] = defaultroi["ROI 0"]["Xmin"]
-            ROI0["Xmax"] = defaultroi["ROI 0"]["Xmax"]
-            ROI0["Ymin"] = defaultroi["ROI 0"]["Ymin"]
-            ROI0["Ymax"] = defaultroi["ROI 0"]["Ymax"]
-            ROI0["Tmin"] = defaultroi["ROI 0"]["Tmin"]
-            ROI0["Tmax"] = defaultroi["ROI 0"]["Tmax"]
+            def_ROI = {
+                "Xmin": default_roi["ROI 0"]["Xmin"],
+                "Xmax": default_roi["ROI 0"]["Xmax"],
+                "Ymin": default_roi["ROI 0"]["Ymin"],
+                "Ymax": default_roi["ROI 0"]["Ymax"],
+                "Tmin": default_roi["ROI 0"]["Tmin"],
+                "Tmax": default_roi["ROI 0"]["Tmax"],
+            }
 
-            (Xa, Ya, Ta) = ROI_data(ROI0, Xa, Ya, Ta)
+            (Xa, Ya, Ta) = filter_data_to_ROI(
+                Xa, Ya, Ta, from_metadata=False, ROI=def_ROI
+            )
 
             to_mcp_dictionary = []
             to_mcp_dictionary.append(
@@ -129,7 +132,7 @@ def main(self):
                     "comment": "",
                 }
             )
-            exportROIinfo(to_mcp_dictionary, ROI0, 0)
+            exportROIinfo(to_mcp_dictionary, def_ROI, 0)
 
             MCP_stats_folder = data.path.parent / ".MCPstats"
             MCP_stats_folder.mkdir(exist_ok=True)
@@ -148,25 +151,6 @@ def main(self):
 
     # large temporal box
     df = df.loc[(df["T"] > 309.0) & (df["T"] < 326.5)]
-
-    fig, axs = plt.subplots(1, 2)
-
-    axs[0].hist2d(
-        df["X"],
-        df["T"],
-        bins=[40, 100],
-    )
-    axs[0].set(xlabel="X (mm)")
-    axs[0].set(ylabel="T (ms)")
-
-    axs[1].hist2d(
-        df["Y"],
-        df["T"],
-        bins=[40, 100],
-    )
-    axs[1].set(xlabel="Y (mm)")
-    axs[1].set(ylabel="T (ms)")
-    fig.show()
 
     # small boxes
     spatial_width = 5.0
