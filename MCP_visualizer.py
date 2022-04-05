@@ -82,15 +82,6 @@ def show_figure1D(fig):
     fig.set_canvas(new_manager.canvas)
 
 
-def get_histo(T, bins):
-    bin_heights, bin_borders, _ = plt.hist(
-        T, bins=np.linspace(np.min(T), np.max(T), bins)
-    )
-    bin_centers = bin_borders[:-1] + np.diff(bin_borders) / 2
-    plt.close()
-    return (bin_centers, bin_heights)
-
-
 def generate_list(prefix, nbfiles):
     u = []
     for i in range(nbfiles):
@@ -141,12 +132,27 @@ def update_plot(values, X, Y, T, T_raw, ax1D, fig_agg1D, ax2D, fig_agg2D, nb_of_
         ax1D.grid(True)
     if values["T"]:
         if values["unreconstructed"]:
-            ax1D.hist(
-                T_raw,
-                bins=np.linspace(np.min(T_raw), np.max(T_raw), bins),
-                color="black",
+            bin_heights, bin_borders, _ = plt.hist(
+                T_raw, bins=np.linspace(np.min(T_raw), np.max(T_raw), bins)
             )
-        ax1D.hist(T, bins=np.linspace(np.min(T), np.max(T), bins), color="tab:blue")
+            plt.close()
+            widths = np.diff(bin_borders)
+            # bin_heights = np.array(bin_heights) / nb_of_cycles
+            ax1D.bar(bin_borders[:-1], bin_heights, widths, color="black")
+            # ax1D.hist(
+            #    T_raw,
+            #    bins=np.linspace(np.min(T_raw), np.max(T_raw), bins),
+            # color="black",
+            # )
+        bin_heights, bin_borders, _ = plt.hist(
+            T, bins=np.linspace(np.min(T), np.max(T), bins)
+        )
+        plt.close()
+        widths = np.diff(bin_borders)
+        bin_heights = np.array(bin_heights) / nb_of_cycles
+        ax1D.bar(bin_borders[:-1], bin_heights, widths)
+
+        # ax1D.hist(T, bins=np.linspace(np.min(T), np.max(T), bins), color="tab:blue")
         if values["ROI0"]:
             ax1D.set_xlim(float(values["Tmin"]), float(values["Tmax"]))
         if not values["ROI0"]:
@@ -315,7 +321,11 @@ def main(self):
 
     fig1D, ax1D = plt.subplots(figsize=(6, 3))
     # ax1D.hist(T_raw, bins=np.linspace(np.min(T_raw), np.max(T_raw), 300), color="black")
-    ax1D.hist(T, bins=np.linspace(0, np.max(T), 300), color="tab:blue")
+    bin_heights, bin_borders, _ = plt.hist(T, bins=np.linspace(0, np.max(T), 300))
+    plt.close()
+    widths = np.diff(bin_borders)
+    ax1D.bar(bin_borders[:-1], bin_heights, widths, color="tab:blue")
+    # ax1D.hist(T, bins=np.linspace(0, np.max(T), 300), color="tab:blue")
     # ax1D.plot(bin_centers_raw, bin_heights_raw, linestyle="dotted", color="black")
     ax1D.set_xlim(np.min(T), np.max(T))
     ax1D.set_xlabel("time (ms)")
@@ -614,7 +624,6 @@ def main(self):
             X = []
             Y = []
             T = []
-            nb_of_events = 0
             for k in range(len(list_of_files)):
                 new_path = (
                     data.path.parent.parent
@@ -626,7 +635,6 @@ def main(self):
                 X = np.concatenate([X, Xa])
                 Y = np.concatenate([Y, Ya])
                 T = np.concatenate([T, Ta])
-                nb_of_events += len(X)
             update_plot(
                 values,
                 X,
