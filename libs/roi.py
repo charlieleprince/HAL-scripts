@@ -11,7 +11,7 @@ def read_metadata(metadata, nb):
     return (Xmin, Xmax, Ymin, Ymax, Tmin, Tmax)
 
 
-def exportROIinfo(to_mcp, ROI, nb):
+def exportROIinfo(to_mcp: list, ROI, nb) -> None:
     to_mcp.append(
         {
             "name": "--ROI" + str(nb) + ":Xmin",

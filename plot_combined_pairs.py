@@ -4,7 +4,6 @@
 # --------------------------------------------------------------------------------------
 
 # built-in python libs
-# --------------------
 import logging
 import json
 from pathlib import Path
@@ -16,12 +15,13 @@ from PyQt5.QtCore import Qt
 
 # misc.
 import numpy as np
+import pandas as pd
 from matplotlib import pyplot as plt
 
 # local libs
-# ----------
 from HAL.gui.dataexplorer import getSelectionMetaDataFromCache
 from .libs.roi import exportROIinfo, filter_data_to_ROI
+from .libs.analysis import spacetime_to_velocities_converter
 from .libs.constants import *
 
 # --------------------------------------------------------------------------------------
@@ -29,9 +29,7 @@ from .libs.constants import *
 # /!\/!\/!\
 # in order to be imported as a user script, two "global" variables
 # have to be defined: NAME and CATEGORY
-NAME = (
-    "3bis. Combine and watch ROI"  # display name, used in menubar and command palette
-)
+NAME = "Plot combined pairs"  # display name, used in menubar and command palette
 CATEGORY = "MCP"  # category (note that CATEGORY="" is a valid choice)
 logger = logging.getLogger(__name__)
 
@@ -118,38 +116,27 @@ def main(self):
         Y = np.concatenate([Y, Y_item])
         T = np.concatenate([T, T_item])
 
-    fig3 = plt.figure()
-    plt.hist2d(X, Y, bins=np.linspace(-40, 40, 2 * 81), cmap=plt.cm.jet)
-    plt.colorbar()
-    fig3.show()
+    print(X)
+    print(T)
+    v_x, v_y, v_z = spacetime_to_velocities_converter(X, Y, T)
+    df = pd.DataFrame({"v_x": v_x, "v_y": v_y, "v_z": v_z})
+    del X, Y, T
 
-    fig2 = plt.figure()
-    plt.hist(T, bins=np.linspace(np.min(T), np.max(T), 150))
-    plt.xlabel("time (ms)")
-    plt.ylabel("number of events")
-    plt.grid(True)
-    fig2.show()
+    fig, axs = plt.subplots(1, 2)
 
-    fig4 = plt.figure()
-    plt.hist2d(
-        X,
-        T,
-        bins=[np.linspace(-40, 40, 2 * 81), np.linspace(np.min(T), np.max(T), 2 * 81)],
-        cmap=plt.cm.jet,
+    axs[0].hist2d(
+        df["v_x"],
+        df["v_z"],
+        bins=[40, 100],
     )
-    plt.xlabel("X")
-    plt.ylabel("T")
-    plt.colorbar()
-    fig4.show()
+    axs[0].set(xlabel="v_x (mm/s)")
+    axs[0].set(ylabel="v_z (mm/s)")
 
-    fig5 = plt.figure()
-    plt.hist2d(
-        Y,
-        T,
-        [np.linspace(-40, 40, 2 * 81), np.linspace(np.min(T), np.max(T), 2 * 81)],
-        cmap=plt.cm.jet,
+    axs[1].hist2d(
+        df["v_y"],
+        df["v_z"],
+        bins=[40, 100],
     )
-    plt.xlabel("Y")
-    plt.ylabel("T")
-    plt.colorbar()
-    fig5.show()
+    axs[1].set(xlabel="v_y (mm/s)")
+    axs[1].set(ylabel="v_z (mm/s)")
+    fig.show()
