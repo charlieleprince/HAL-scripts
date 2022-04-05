@@ -120,7 +120,7 @@ def ROI_data(ROI, X, Y, T):
     return (X_ROI, Y_ROI, T_ROI)
 
 
-def update_plot(values, X, Y, T, T_raw, ax1D, fig_agg1D, ax2D, fig_agg2D):
+def update_plot(values, X, Y, T, T_raw, ax1D, fig_agg1D, ax2D, fig_agg2D, nb_of_cycles):
     cmaps = [name for name in plt.colormaps() if not name.endswith("_r")]
     if values["ROI0"]:
         Xdata, Ydata, Tdata = X, Y, T
@@ -442,13 +442,7 @@ def main(self):
     ]
 
     data_options_col = [
-        [
-            sg.Checkbox(
-                "Select all",
-                default=False,
-                key="select all",
-            )
-        ],
+        [sg.Button("Combine seq")],
         [
             sg.Checkbox(
                 "Deselect all",
@@ -527,7 +521,7 @@ def main(self):
             break
 
         if event == "update":
-            update_plot(values, X, Y, T, T_raw, ax1D, fig_agg1D, ax2D, fig_agg2D)
+            update_plot(values, X, Y, T, T_raw, ax1D, fig_agg1D, ax2D, fig_agg2D, 1)
 
         if event == "Ok":
             if values["set to default"]:
@@ -602,14 +596,9 @@ def main(self):
                     ):
                         window[all_buttons[k][4:]].update(visible=True)
                 window["cycles"].Widget.canvas.yview_moveto(0.0)
-
-            # sequence = values["selected_seq"]
-            # data_col = [
-            #    [sg.Button(list_of_files[k])] for k in range(len(list_of_files) - 3)
-            # ]
-            # window["123_011"].update(visible=False)
             window.refresh()
             window["cycles"].contents_changed()
+
         for k in range(nbfiles):
             if event == all_buttons[k][4:]:
                 new_path = (
@@ -619,7 +608,37 @@ def main(self):
                 )
                 data.path = new_path
                 (X, Y, T, T_raw) = getrawdata(new_path)
-                update_plot(values, X, Y, T, T_raw, ax1D, fig_agg1D, ax2D, fig_agg2D)
+                update_plot(values, X, Y, T, T_raw, ax1D, fig_agg1D, ax2D, fig_agg2D, 1)
+
+        if event == "Combine seq":
+            X = []
+            Y = []
+            T = []
+            nb_of_events = 0
+            for k in range(len(list_of_files)):
+                new_path = (
+                    data.path.parent.parent
+                    / str(list_of_files[k][:3])
+                    / (str(list_of_files[k]) + ".atoms")
+                )
+                data.path = new_path
+                (Xa, Ya, Ta, T_raw) = getrawdata(new_path)
+                X = np.concatenate([X, Xa])
+                Y = np.concatenate([Y, Ya])
+                T = np.concatenate([T, Ta])
+                nb_of_events += len(X)
+            update_plot(
+                values,
+                X,
+                Y,
+                T,
+                T_raw,
+                ax1D,
+                fig_agg1D,
+                ax2D,
+                fig_agg2D,
+                len(list_of_files),
+            )
 
     plt.close()
     window.close()
