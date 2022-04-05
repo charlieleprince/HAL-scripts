@@ -137,13 +137,7 @@ def update_plot(values, X, Y, T, T_raw, ax1D, fig_agg1D, ax2D, fig_agg2D, nb_of_
             )
             plt.close()
             widths = np.diff(bin_borders)
-            # bin_heights = np.array(bin_heights) / nb_of_cycles
             ax1D.bar(bin_borders[:-1], bin_heights, widths, color="black")
-            # ax1D.hist(
-            #    T_raw,
-            #    bins=np.linspace(np.min(T_raw), np.max(T_raw), bins),
-            # color="black",
-            # )
         bin_heights, bin_borders, _ = plt.hist(
             T, bins=np.linspace(np.min(T), np.max(T), bins)
         )
@@ -303,6 +297,7 @@ def main(self):
         defaultroi = json.load(f)
 
     list_of_files = []
+    total_cycles = 1
 
     currentDir = data.path.parent
     for currentFile in currentDir.iterdir():
@@ -353,6 +348,20 @@ def main(self):
             )
     data_buttons.reverse()
     data_col = data_buttons
+
+    qc3 = ""
+    parameters_file = data.path.parent / (data.path.stem + ".json")
+    if parameters_file.is_file():
+        with open(parameters_file, encoding="utf-8") as file:
+            sequence_parameters = json.load(file)
+        for k in range(len(sequence_parameters)):
+            qc3 += (
+                sequence_parameters[k]["name"]
+                + " : "
+                + str(np.round(sequence_parameters[k]["value"], 3))
+                + "\n"
+            )
+
     l2col1 = [
         [sg.Text("ROI selection", font="Helvetica 10 bold", justification="center")],
         [sg.Checkbox("Plot data from ROI", default=False, key="ROI0")],
@@ -436,8 +445,18 @@ def main(self):
 
     l2col2 = [[sg.Canvas(key="-CANVAS-")]]
 
+    qc3col = [[sg.Text(qc3, font="Helvetica 10", key="qc3params")]]
+
     l2col3 = [
-        [sg.Checkbox("test", default=True, key="testkey", text_color="orange")],
+        [
+            sg.Column(
+                qc3col,
+                size=(300, 550),
+                scrollable=True,
+                # vertical_scroll_only=True,
+                key="qc3column",
+            ),
+        ]
     ]
 
     l1col1 = [[sg.Text("Bonjour")]]
@@ -453,13 +472,6 @@ def main(self):
 
     data_options_col = [
         [sg.Button("Combine seq")],
-        [
-            sg.Checkbox(
-                "Deselect all",
-                default=False,
-                key="deselect all",
-            )
-        ],
     ]
 
     l3col1 = [
@@ -531,7 +543,9 @@ def main(self):
             break
 
         if event == "update":
-            update_plot(values, X, Y, T, T_raw, ax1D, fig_agg1D, ax2D, fig_agg2D, 1)
+            update_plot(
+                values, X, Y, T, T_raw, ax1D, fig_agg1D, ax2D, fig_agg2D, total_cycles
+            )
 
         if event == "Ok":
             if values["set to default"]:
@@ -608,6 +622,9 @@ def main(self):
                 window["cycles"].Widget.canvas.yview_moveto(0.0)
             window.refresh()
             window["cycles"].contents_changed()
+            update_plot(
+                values, X, Y, T, T_raw, ax1D, fig_agg1D, ax2D, fig_agg2D, total_cycles
+            )
 
         for k in range(nbfiles):
             if event == all_buttons[k][4:]:
@@ -618,7 +635,35 @@ def main(self):
                 )
                 data.path = new_path
                 (X, Y, T, T_raw) = getrawdata(new_path)
-                update_plot(values, X, Y, T, T_raw, ax1D, fig_agg1D, ax2D, fig_agg2D, 1)
+                total_cycles = 1
+                update_plot(
+                    values,
+                    X,
+                    Y,
+                    T,
+                    T_raw,
+                    ax1D,
+                    fig_agg1D,
+                    ax2D,
+                    fig_agg2D,
+                    total_cycles,
+                )
+
+                qc3 = ""
+                parameters_file = data.path.parent / (data.path.stem + ".json")
+                if parameters_file.is_file():
+                    with open(parameters_file, encoding="utf-8") as file:
+                        sequence_parameters = json.load(file)
+                    for k in range(len(sequence_parameters)):
+                        qc3 += (
+                            sequence_parameters[k]["name"]
+                            + " : "
+                            + str(np.round(sequence_parameters[k]["value"], 3))
+                            + "\n"
+                        )
+                window["qc3params"].update(qc3)
+                window.refresh()
+                window["qc3column"].contents_changed()
 
         if event == "Combine seq":
             X = []
@@ -635,6 +680,7 @@ def main(self):
                 X = np.concatenate([X, Xa])
                 Y = np.concatenate([Y, Ya])
                 T = np.concatenate([T, Ta])
+            total_cycles = len(list_of_files)
             update_plot(
                 values,
                 X,
