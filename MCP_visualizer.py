@@ -147,7 +147,10 @@ def update_plot(values, X, Y, T, T_raw, ax1D, fig_agg1D, ax2D, fig_agg2D):
                 color="black",
             )
         ax1D.hist(T, bins=np.linspace(np.min(T), np.max(T), bins), color="tab:blue")
-        ax1D.set_xlim(np.min(T), np.max(T))
+        if values["ROI0"]:
+            ax1D.set_xlim(float(values["Tmin"]), float(values["Tmax"]))
+        if not values["ROI0"]:
+            ax1D.set_xlim(np.min(T), np.max(T))
         ax1D.set_xlabel("time (ms)")
         ax1D.set_ylabel("number of events")
     if values["X"]:
@@ -178,27 +181,62 @@ def update_plot(values, X, Y, T, T_raw, ax1D, fig_agg1D, ax2D, fig_agg2D):
         ax2D.set_xlabel("X")
         ax2D.set_ylabel("Y")
     if values["XT"]:
-        ax2D.hist2d(
-            X,
-            T,
-            bins=[
-                np.linspace(-40, 40, int(values["bins2D"])),
-                np.linspace(np.min(T), np.max(T), int(values["bins2D"])),
-            ],
-            cmap=cmap,
-        )
+
+        if values["ROI0"]:
+            ax2D.set_ylim(float(values["Tmin"]), float(values["Tmax"]))
+            ax2D.hist2d(
+                X,
+                T,
+                bins=[
+                    np.linspace(-40, 40, int(values["bins2D"])),
+                    np.linspace(
+                        float(values["Tmin"]),
+                        float(values["Tmax"]),
+                        int(values["bins2D"]),
+                    ),
+                ],
+                cmap=cmap,
+            )
+        if not values["ROI0"]:
+            ax2D.hist2d(
+                X,
+                T,
+                bins=[
+                    np.linspace(-40, 40, int(values["bins2D"])),
+                    np.linspace(np.min(T), np.max(T), int(values["bins2D"])),
+                ],
+                cmap=cmap,
+            )
         ax2D.set_xlabel("X")
         ax2D.set_ylabel("T")
     if values["YT"]:
-        ax2D.hist2d(
-            Y,
-            T,
-            bins=[
-                np.linspace(-40, 40, int(values["bins2D"])),
-                np.linspace(np.min(T), np.max(T), int(values["bins2D"])),
-            ],
-            cmap=cmap,
-        )
+
+        if values["ROI0"]:
+            ax2D.set_ylim(float(values["Tmin"]), float(values["Tmax"]))
+            ax2D.hist2d(
+                Y,
+                T,
+                bins=[
+                    np.linspace(-40, 40, int(values["bins2D"])),
+                    np.linspace(
+                        float(values["Tmin"]),
+                        float(values["Tmax"]),
+                        int(values["bins2D"]),
+                    ),
+                ],
+                cmap=cmap,
+            )
+        if not values["ROI0"]:
+            ax2D.hist2d(
+                Y,
+                T,
+                bins=[
+                    np.linspace(-40, 40, int(values["bins2D"])),
+                    np.linspace(np.min(T), np.max(T), int(values["bins2D"])),
+                ],
+                cmap=cmap,
+            )
+
         ax2D.set_xlabel("Y")
         ax2D.set_ylabel("T")
     if values["grid2D"]:
