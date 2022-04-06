@@ -6,6 +6,7 @@
 # built-in python libs
 import logging
 import json
+import itertools as itt
 from pathlib import Path
 
 # third party imports
@@ -20,8 +21,7 @@ import pandas as pd
 from matplotlib import pyplot as plt
 
 # local libs
-from HAL.gui.dataexplorer import getSelectionMetaDataFromCache
-from .libs.roi import exportROIinfo, filter_data_to_ROI
+from .libs.analysis import spacetime_to_velocities_converter
 from .libs.constants import *
 
 # --------------------------------------------------------------------------------------
@@ -42,8 +42,6 @@ def main(self):
     HAL mainwindow object (granting access to all the gui attributes and methods)
     """
 
-    # get metadata from current selection
-    metadata = getSelectionMetaDataFromCache(self, update_cache=True)
     # -- get selected data
     selection = self.runList.selectedItems()
     if not selection:
@@ -52,114 +50,78 @@ def main(self):
     # get object data type
     data_class = self.dataTypeComboBox.currentData()
     data = data_class()
-    # get path
-    root = Path().home()
-    default_roi_dir = root / ".HAL"
-    default_roi_file_name = default_roi_dir / "default_mcp_roi.json"
 
-    item = selection[0]
-    data.path = item.data(Qt.UserRole)
-    X, Y, T = data.getrawdata()
-    if "N_ROI0" in metadata["current selection"]["mcp"]:
-        (X, Y, T) = filter_data_to_ROI(
-            X, Y, T, from_metadata=True, metadata=metadata, metadata_ROI_nb=0
-        )
-    else:
-        with open(default_roi_file_name, encoding="utf8") as f:
-            default_roi = json.load(f)
+    # box parameters (mm/s)
+    # ----------------------------------------------------------------------------------
 
-        def_ROI = {
-            "Xmin": default_roi["ROI 0"]["Xmin"],
-            "Xmax": default_roi["ROI 0"]["Xmax"],
-            "Ymin": default_roi["ROI 0"]["Ymin"],
-            "Ymax": default_roi["ROI 0"]["Ymax"],
-            "Tmin": default_roi["ROI 0"]["Tmin"],
-            "Tmax": default_roi["ROI 0"]["Tmax"],
-        }
-        (X, Y, T) = filter_data_to_ROI(X, Y, T, from_metadata=False, ROI=def_ROI)
+    # sizes
+    delta_v_perp = 10.0  # 0.28
+    delta_v_z = 2.0  # 0.48
 
-        to_mcp_dictionary = []
-        to_mcp_dictionary.append(
-            {
-                "name": "N_tot",
-                "value": len(X),
-                "display": "%.3g",
-                "unit": "",
-                "comment": "",
-            }
-        )
-        exportROIinfo(to_mcp_dictionary, def_ROI, 0)
+    # centers
+    box_1_vx = -40.5
+    box_1_vy = 2.5
 
-        MCP_stats_folder = data.path.parent / ".MCPstats"
-        MCP_stats_folder.mkdir(exist_ok=True)
-        file_name = MCP_stats_folder / data.path.stem
-        with open(str(file_name) + ".json", "w", encoding="utf-8") as file:
-            json.dump(to_mcp_dictionary, file, ensure_ascii=False, indent=4)
+    box_2_vx = -43.7
+    box_2_vy = 1.6
 
-    for k in range(len(selection) - 1):
-        item = selection[k]
+    vz_min, vz_max = 50.0, 140.0
+    n_boxes = int(np.ceil((vz_max - vz_min) / delta_v_z))
+    print(n_boxes)
+    box_vz_array = np.linspace(50.0, 140.0, n_boxes)
+
+    # ----------------------------------------------------------------------------------
+
+    df_correlations = pd.DataFrame(
+        list(itt.product(box_vz_array, box_vz_array)), columns=["vz box1", "vz box2"]
+    )
+    df_correlations["N box1"] = [[] for _ in range(n_boxes**2)]
+    df_correlations["N box2"] = [[] for _ in range(n_boxes**2)]
+    df_correlations["N1 x N2"] = [[] for _ in range(n_boxes**2)]
+
+    for idx_file, item in enumerate(selection):
         data.path = item.data(Qt.UserRole)
-        if not data.path.suffix == ".atoms":
-            return
-        # get data
-        Xa, Ya, Ta = data.getrawdata()
-        if "N_ROI0" in metadata["current selection"]["mcp"]:
-            (Xa, Ya, Ta) = filter_data_to_ROI(
-                Xa, Ya, Ta, from_metadata=True, metadata=metadata, metadata_ROI_nb=0
-            )
-        else:
-            with open(default_roi_file_name, encoding="utf8") as f:
-                default_roi = json.load(f)
 
-            def_ROI = {
-                "Xmin": default_roi["ROI 0"]["Xmin"],
-                "Xmax": default_roi["ROI 0"]["Xmax"],
-                "Ymin": default_roi["ROI 0"]["Ymin"],
-                "Ymax": default_roi["ROI 0"]["Ymax"],
-                "Tmin": default_roi["ROI 0"]["Tmin"],
-                "Tmax": default_roi["ROI 0"]["Tmax"],
-            }
+        print(f"{idx_file/len(selection)*100:.2f}%")
 
-            (Xa, Ya, Ta) = filter_data_to_ROI(
-                Xa, Ya, Ta, from_metadata=False, ROI=def_ROI
-            )
+        for idx1, box_1_vz in enumerate(box_vz_array):
 
-            to_mcp_dictionary = []
-            to_mcp_dictionary.append(
-                {
-                    "name": "N_tot",
-                    "value": len(X),
-                    "display": "%.3g",
-                    "unit": "",
-                    "comment": "",
-                }
-            )
-            exportROIinfo(to_mcp_dictionary, def_ROI, 0)
+            # get data
+            X_item, Y_item, T_item = data.getrawdata()
+            v_x, v_y, v_z = spacetime_to_velocities_converter(X_item, Y_item, T_item)
+            df_item = pd.DataFrame({"v_x": v_x, "v_y": v_y, "v_z": v_z})
 
-            MCP_stats_folder = data.path.parent / ".MCPstats"
-            MCP_stats_folder.mkdir(exist_ok=True)
-            file_name = MCP_stats_folder / data.path.stem
-            with open(str(file_name) + ".json", "w", encoding="utf-8") as file:
-                json.dump(to_mcp_dictionary, file, ensure_ascii=False, indent=4)
+            # filter data to box 1
+            df_box1 = df_item.loc[
+                (df_item["v_x"] > box_1_vx - delta_v_perp / 2)
+                & (df_item["v_x"] < box_1_vx + delta_v_perp / 2)
+                & (df_item["v_y"] > box_1_vy - delta_v_perp / 2)
+                & (df_item["v_y"] < box_1_vy + delta_v_perp / 2)
+                & (df_item["v_z"] > box_1_vz - delta_v_z / 2)
+                & (df_item["v_z"] < box_1_vz + delta_v_z / 2)
+            ]
 
-        X = np.concatenate([X, Xa])
-        Y = np.concatenate([Y, Ya])
-        T = np.concatenate([T, Ta])
+            N_box1 = len(df_box1)
 
-    df = pd.DataFrame({"X": X, "Y": Y, "T": T})
-    del X, Y, T
+            for idx2, box_2_vz in enumerate(box_vz_array):
 
-    # fig2 = plt.figure()
-    # plt.hist(
-    #     df["T"],
-    #     bins="auto",
-    #     histtype="step",
-    #     log=True,
-    # )
-    # plt.xlabel("T (mm)")
-    # plt.ylabel("number of events")
-    # plt.grid(True)
-    # fig2.show()
+                # filter data to box 1
+                df_box2 = df_item.loc[
+                    (df_item["v_x"] > box_2_vx - delta_v_perp / 2)
+                    & (df_item["v_x"] < box_2_vx + delta_v_perp / 2)
+                    & (df_item["v_y"] > box_2_vy - delta_v_perp / 2)
+                    & (df_item["v_y"] < box_2_vy + delta_v_perp / 2)
+                    & (df_item["v_z"] > box_2_vz - delta_v_z / 2)
+                    & (df_item["v_z"] < box_2_vz + delta_v_z / 2)
+                ]
+
+                N_box2 = len(df_box2)
+                df_correlations.iloc[idx1 * n_boxes + idx2]["N box1"].append(N_box1)
+                df_correlations.iloc[idx1 * n_boxes + idx2]["N box2"].append(N_box2)
+                df_correlations.iloc[idx1 * n_boxes + idx2]["N1 x N2"].append(
+                    N_box1 * N_box2
+                )
+
 
     # filtering
 

@@ -52,8 +52,8 @@ def main(self):
     # ----------------------------------------------------------------------------------
 
     # sizes
-    delta_v_perp = 1.0  # 0.28
-    delta_v_z = 20.0  # 0.48
+    delta_v_perp = 10.0  # 0.28
+    delta_v_z = 2.0  # 0.48
 
     # centers
     box_1_vx = -40.5
@@ -62,8 +62,10 @@ def main(self):
     box_2_vx = -43.7
     box_2_vy = 1.6
 
-    n_boxes = 40
-    box_vz_array = np.linspace(40.0, 140.0, n_boxes)
+    vz_min, vz_max = 50.0, 140.0
+    n_boxes = int(np.ceil((vz_max - vz_min) / delta_v_z))
+    print(n_boxes)
+    box_vz_array = np.linspace(50.0, 140.0, n_boxes)
 
     # ----------------------------------------------------------------------------------
 

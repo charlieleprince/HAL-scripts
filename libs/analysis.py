@@ -6,7 +6,6 @@
 # built-in python libs
 from typing import (
     Union,
-    Optional,
 )  # NB: deprecated in python version>=3.10 (should be updated to new notation "|": cf PEP 604 https://docs.python.org/3/library/typing.html#typing.Union)
 
 # third party imports
@@ -25,7 +24,7 @@ def spacetime_to_velocities_converter(
     X: Union[float, np.ndarray],
     Y: Union[float, np.ndarray],
     T: Union[float, np.ndarray],
-    k_lattice: Optional[float] = None,
+    k_lattice: bool = False,
 ) -> tuple[
     Union[float, np.ndarray], Union[float, np.ndarray], Union[float, np.ndarray]
 ]:
@@ -59,9 +58,10 @@ def spacetime_to_velocities_converter(
     v_z = (0.5 * g * T) - (L_fall / T) * 1e6
 
     # eventual unit conversion
-    if k_lattice is not None:
-        v_x = m * v_x / k_lattice
-        v_y = m * v_y / k_lattice
-        v_z = m * v_z / k_lattice
+    if k_lattice is True:
+        k_lat = 5.86e3  # 1/mm
+        v_x = m * v_x / (hbar * k_lat)
+        v_y = m * v_y / (hbar * k_lat)
+        v_z = m * v_z / (hbar * k_lat)
 
     return v_x, v_y, v_z
