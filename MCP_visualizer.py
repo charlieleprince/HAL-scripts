@@ -154,12 +154,21 @@ def update_plot(values, X, Y, T, T_raw, ax1D, fig_agg1D, ax2D, fig_agg2D, nb_of_
         ax1D.set_xlabel("time (ms)")
         ax1D.set_ylabel("number of events")
     if values["X"]:
-        ax1D.hist(X, bins=np.linspace(-40, 40, bins), color="tab:blue")
+        bin_heights, bin_borders, _ = plt.hist(X, bins=np.linspace(-40, 40, bins))
+        plt.close()
+        widths = np.diff(bin_borders)
+        bin_heights = np.array(bin_heights) / nb_of_cycles
+        ax1D.bar(bin_borders[:-1], bin_heights, widths, color="tab:blue")
+        # ax1D.hist(X, bins=np.linspace(-40, 40, bins), color="tab:blue")
         ax1D.set_xlim(-40, 40)
         ax1D.set_xlabel("X (mm)")
         ax1D.set_ylabel("number of events")
     if values["Y"]:
-        ax1D.hist(Y, bins=np.linspace(-40, 40, bins), color="tab:blue")
+        bin_heights, bin_borders, _ = plt.hist(Y, bins=np.linspace(-40, 40, bins))
+        plt.close()
+        widths = np.diff(bin_borders)
+        bin_heights = np.array(bin_heights) / nb_of_cycles
+        ax1D.bar(bin_borders[:-1], bin_heights, widths, color="tab:blue")
         ax1D.set_xlabel("Y (mm)")
         ax1D.set_xlim(-40, 40)
         ax1D.set_ylabel("number of events")
