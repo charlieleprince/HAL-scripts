@@ -80,13 +80,13 @@ def main(self):
         data.path = item.data(Qt.UserRole)
 
         print(f"{idx_file/len(selection)*100:.2f}%")
+        # get data
+        X_item, Y_item, T_item = data.getrawdata()
+        v_x, v_y, v_z = spacetime_to_velocities_converter(X_item, Y_item, T_item)
+        df_item = pd.DataFrame({"v_x": v_x, "v_y": v_y, "v_z": v_z})
 
         for idx1, box_1_vz in enumerate(box_vz_array):
 
-            # get data
-            X_item, Y_item, T_item = data.getrawdata()
-            v_x, v_y, v_z = spacetime_to_velocities_converter(X_item, Y_item, T_item)
-            df_item = pd.DataFrame({"v_x": v_x, "v_y": v_y, "v_z": v_z})
 
             # filter data to box 1
             df_box1 = df_item.loc[
