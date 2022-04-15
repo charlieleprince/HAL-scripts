@@ -481,7 +481,7 @@ def main(self):
     ]
 
     data_options_col = [
-        [sg.Button("Combine seq")],
+        [sg.Button("Average seq")],
     ]
 
     l3col1 = [
@@ -646,6 +646,7 @@ def main(self):
             update_plot(
                 values, X, Y, T, T_raw, ax1D, fig_agg1D, ax2D, fig_agg2D, total_cycles
             )
+            list_of_files = new_list_of_files
 
         for k in range(nbfiles):
             if event == all_buttons[k][4:]:
@@ -686,10 +687,10 @@ def main(self):
                 window.refresh()
                 window["qc3column"].contents_changed()
 
-        if event == "Combine seq":
-            X = []
-            Y = []
-            T = []
+        if event == "Average seq":
+            Xav = []
+            Yav = []
+            Tav = []
             for k in range(len(list_of_files)):
                 new_path = (
                     data.path.parent.parent
@@ -698,15 +699,15 @@ def main(self):
                 )
                 data.path = new_path
                 (Xa, Ya, Ta, T_raw) = getrawdata(new_path)
-                X = np.concatenate([X, Xa])
-                Y = np.concatenate([Y, Ya])
-                T = np.concatenate([T, Ta])
+                Xav = np.concatenate([Xav, Xa])
+                Yav = np.concatenate([Yav, Ya])
+                Tav = np.concatenate([Tav, Ta])
             total_cycles = len(list_of_files)
             update_plot(
                 values,
-                X,
-                Y,
-                T,
+                Xav,
+                Yav,
+                Tav,
                 T_raw,
                 ax1D,
                 fig_agg1D,
