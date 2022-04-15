@@ -181,12 +181,22 @@ def update_plot(values, X, Y, T, T_raw, ax1D, fig_agg1D, ax2D, fig_agg2D, nb_of_
     if not values["colormap"] in cmaps:
         return
     cmap = plt.get_cmap(values["colormap"])
+    coeff = 1.0
+    if values["2dmax"]:
+        coeff = float(values["max plot2d"])/100
     if values["XY"]:
+        hist= ax2D.hist2d(
+            X,
+            Y,
+            bins=np.linspace(-40, 40, int(values["bins2D"]))
+        )
+
         ax2D.hist2d(
             X,
             Y,
             bins=np.linspace(-40, 40, int(values["bins2D"])),
             cmap=cmap,
+            vmax = coeff * max(hist[0].flatten())
         )
         ax2D.set_xlabel("X")
         ax2D.set_ylabel("Y")
@@ -194,6 +204,18 @@ def update_plot(values, X, Y, T, T_raw, ax1D, fig_agg1D, ax2D, fig_agg2D, nb_of_
 
         if values["ROI0"]:
             ax2D.set_ylim(float(values["Tmin"]), float(values["Tmax"]))
+            hist = ax2D.hist2d(
+                X,
+                T,
+                bins=[
+                    np.linspace(-40, 40, int(values["bins2D"])),
+                    np.linspace(
+                        float(values["Tmin"]),
+                        float(values["Tmax"]),
+                        int(values["bins2D"]),
+                    ),
+                ],
+            )
             ax2D.hist2d(
                 X,
                 T,
@@ -206,8 +228,18 @@ def update_plot(values, X, Y, T, T_raw, ax1D, fig_agg1D, ax2D, fig_agg2D, nb_of_
                     ),
                 ],
                 cmap=cmap,
+                vmax = coeff * max(hist[0].flatten()),
             )
         if not values["ROI0"]:
+            hist=ax2D.hist2d(
+                X,
+                T,
+                bins=[
+                    np.linspace(-40, 40, int(values["bins2D"])),
+                    np.linspace(np.min(T), np.max(T), int(values["bins2D"])),
+                ],
+                cmap=cmap,
+            )
             ax2D.hist2d(
                 X,
                 T,
@@ -216,6 +248,7 @@ def update_plot(values, X, Y, T, T_raw, ax1D, fig_agg1D, ax2D, fig_agg2D, nb_of_
                     np.linspace(np.min(T), np.max(T), int(values["bins2D"])),
                 ],
                 cmap=cmap,
+                vmax = coeff * max(hist[0].flatten()),
             )
         ax2D.set_xlabel("X")
         ax2D.set_ylabel("T")
@@ -223,6 +256,18 @@ def update_plot(values, X, Y, T, T_raw, ax1D, fig_agg1D, ax2D, fig_agg2D, nb_of_
 
         if values["ROI0"]:
             ax2D.set_ylim(float(values["Tmin"]), float(values["Tmax"]))
+            hist= ax2D.hist2d(
+                Y,
+                T,
+                bins=[
+                    np.linspace(-40, 40, int(values["bins2D"])),
+                    np.linspace(
+                        float(values["Tmin"]),
+                        float(values["Tmax"]),
+                        int(values["bins2D"]),
+                    ),
+                ],
+            )
             ax2D.hist2d(
                 Y,
                 T,
@@ -235,8 +280,17 @@ def update_plot(values, X, Y, T, T_raw, ax1D, fig_agg1D, ax2D, fig_agg2D, nb_of_
                     ),
                 ],
                 cmap=cmap,
+                vmax = coeff * max(hist[0].flatten()),
             )
         if not values["ROI0"]:
+            hist=ax2D.hist2d(
+                Y,
+                T,
+                bins=[
+                    np.linspace(-40, 40, int(values["bins2D"])),
+                    np.linspace(np.min(T), np.max(T), int(values["bins2D"])),
+                ],
+            )
             ax2D.hist2d(
                 Y,
                 T,
@@ -245,6 +299,7 @@ def update_plot(values, X, Y, T, T_raw, ax1D, fig_agg1D, ax2D, fig_agg2D, nb_of_
                     np.linspace(np.min(T), np.max(T), int(values["bins2D"])),
                 ],
                 cmap=cmap,
+                vmax = coeff * max(hist[0].flatten()),
             )
 
         ax2D.set_xlabel("Y")
@@ -418,6 +473,13 @@ def main(self):
             sg.Text("Number of bins"),
             sg.Input(size=(6, 1), default_text=160, key="bins2D"),
             sg.Checkbox("Grid", default=False, key="grid2D"),
+        ],
+        [
+            sg.Checkbox(
+                "Colormap max", default=False, key="2dmax"
+            ),
+            sg.Input(size=(6, 1), default_text=100, key="max plot2d"),
+            sg.Text("%")
         ],
         [
             sg.Combo(
