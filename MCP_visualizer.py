@@ -688,9 +688,9 @@ def main(self):
                 window["qc3column"].contents_changed()
 
         if event == "Average seq":
-            Xav = []
-            Yav = []
-            Tav = []
+            X = []
+            Y = []
+            T = []
             for k in range(len(list_of_files)):
                 new_path = (
                     data.path.parent.parent
@@ -699,15 +699,15 @@ def main(self):
                 )
                 data.path = new_path
                 (Xa, Ya, Ta, T_raw) = getrawdata(new_path)
-                Xav = np.concatenate([Xav, Xa])
-                Yav = np.concatenate([Yav, Ya])
-                Tav = np.concatenate([Tav, Ta])
+                X = np.concatenate([X, Xa])
+                Y = np.concatenate([Y, Ya])
+                T = np.concatenate([T, Ta])
             total_cycles = len(list_of_files)
             update_plot(
                 values,
-                Xav,
-                Yav,
-                Tav,
+                X,
+                Y,
+                T,
                 T_raw,
                 ax1D,
                 fig_agg1D,
