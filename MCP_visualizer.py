@@ -7,6 +7,7 @@ import matplotlib.patches as patches
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import numpy as np
 import scipy.optimize as opt
+from scipy.stats import gaussian_kde
 import PySimpleGUI as sg
 from datetime import datetime
 from PyQt5.QtWidgets import QInputDialog
@@ -586,9 +587,20 @@ def main(self):
             show_figure2D(fig2)
             fig2.show()
         if event == "Open 3D graph":
+            if values["ROI0"]:
+                ROI_dict = {}
+                ROI_dict["Tmin"] = float(values["Tmin"])
+                ROI_dict["Tmax"] = float(values["Tmax"])
+                ROI_dict["Xmin"] = float(values["Xmin"])
+                ROI_dict["Xmax"] = float(values["Xmax"])
+                ROI_dict["Ymin"] = float(values["Ymin"])
+                ROI_dict["Ymax"] = float(values["Ymax"])
+                (Xdata, Ydata, Tdata) = ROI_data(ROI_dict, X, Y, T)
             fig3D = plt.figure()
             ax = plt.axes(projection="3d")
-            ax.scatter3D(X, Y, T, marker=".")
+            xyz = np.vstack([Xdata,Ydata,Tdata])
+            z2 = gaussian_kde(xyz)(xyz)
+            ax.scatter3D(Xdata, Ydata, Tdata, c=z2, marker=".")
             plt.xlabel("X")
             plt.ylabel("Y")
             fig3D.show()

@@ -335,7 +335,7 @@ def main(self):
     current_mcp_metadata.append(
         {
             "name": "ROI0 sigma t",
-            "value": popt[2],
+            "value": np.abs(popt[2]),
             "display": "%.2f",
             "unit": "ms",
             "comment": "",
