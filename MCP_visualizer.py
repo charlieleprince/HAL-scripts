@@ -649,6 +649,7 @@ def main(self):
             show_figure2D(fig2)
             fig2.show()
         if event == "Open 3D graph":
+            (Xdata, Ydata, Tdata) = (X, Y, T)
             if values["ROI0"]:
                 ROI_dict = {}
                 ROI_dict["Tmin"] = float(values["Tmin"])
