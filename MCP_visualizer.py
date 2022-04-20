@@ -802,23 +802,21 @@ def main(self):
                 values["selected_seq"], values["seqmin"], values["seqmax"]
             )
             cancel_average = False
+            total_cycles = len(list_of_files_to_average)
             for k in range(len(list_of_files_to_average)):
                 if not list_of_files_to_average[k] in list_of_files:
-                    cancel_average = True
-                    break
-                new_path = (
-                    data.path.parent.parent
-                    / str(list_of_files_to_average[k][:3])
-                    / (str(list_of_files_to_average[k]) + ".atoms")
-                )
-                data.path = new_path
-                (Xa, Ya, Ta, T_raw) = getrawdata(new_path)
-                X = np.concatenate([X, Xa])
-                Y = np.concatenate([Y, Ya])
-                T = np.concatenate([T, Ta])
-            if cancel_average:
-                break
-            total_cycles = len(list_of_files_to_average)
+                    total_cycles-=1
+                else:
+                    new_path = (
+                        data.path.parent.parent
+                        / str(list_of_files_to_average[k][:3])
+                        / (str(list_of_files_to_average[k]) + ".atoms")
+                    )
+                    data.path = new_path
+                    (Xa, Ya, Ta, T_raw) = getrawdata(new_path)
+                    X = np.concatenate([X, Xa])
+                    Y = np.concatenate([Y, Ya])
+                    T = np.concatenate([T, Ta])
             update_plot(
                 values,
                 X,
@@ -829,7 +827,7 @@ def main(self):
                 fig_agg1D,
                 ax2D,
                 fig_agg2D,
-                len(list_of_files_to_average),
+                total_cycles,
             )
 
     plt.close()
