@@ -798,14 +798,11 @@ def main(self):
             X = []
             Y = []
             T = []
-            print(list_of_files)
             list_of_files_to_average = generate_list2(
                 values["selected_seq"], values["seqmin"], values["seqmax"]
             )
             cancel_average = False
             for k in range(len(list_of_files_to_average)):
-                print(list_of_files_to_average[k])
-                print(not list_of_files_to_average[k] in list_of_files)
                 if not list_of_files_to_average[k] in list_of_files:
                     cancel_average = True
                     break
