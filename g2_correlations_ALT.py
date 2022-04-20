@@ -36,11 +36,9 @@ logger = logging.getLogger(__name__)
 def box_mask(dataframe: pd.DataFrame, parameters: dict) -> pd.Series:
     if parameters["mode"] == "cylindrical":
         box = (
-            np.sqrt(
                 (dataframe["v_x"] - parameters["center"]["v_x"]) ** 2
                 + (dataframe["v_y"] - parameters["center"]["v_y"]) ** 2
-            )
-            < parameters["size"]["diameter"] / 2
+            < (parameters["size"]["diameter"] / 2)**2
         ) & (
             np.abs(dataframe["v_z"] - parameters["center"]["v_z"])
             < parameters["size"]["height"] / 2
@@ -91,8 +89,8 @@ def main(self):
     box1_parameters = {
         "mode": "cylindrical",
         "center": {
-            "v_x": -40.5,
-            "v_y": 2.5,
+            "v_x": -45,#-40.5,
+            "v_y": 0,#2.5,
         },
         "size": {
             "diameter": transverse_diameter,
@@ -103,8 +101,8 @@ def main(self):
     box2_parameters = {
         "mode": "cylindrical",
         "center": {
-            "v_x": -43.7,
-            "v_y": 1.6,
+            "v_x": -45,#-43.7,
+            "v_y": 0,#1.6,
         },
         "size": {
             "diameter": transverse_diameter,
@@ -186,7 +184,7 @@ def main(self):
             df1.rename(columns={"in box": "N"})
             .groupby("run")
             .sum()
-            .drop(["v_x", "v_z"], axis=1)
+    #        .drop(["v_x", "v_z"], axis=1)
         )
 
         N_box1_av = df1["N"].mean()
@@ -204,7 +202,7 @@ def main(self):
                 df2.rename(columns={"in box": "N"})
                 .groupby("run")
                 .sum()
-                .drop(["v_x", "v_z"], axis=1)
+    #            .drop(["v_x", "v_z"], axis=1)
             )
 
             N_box2_av = df2["N"].mean()
