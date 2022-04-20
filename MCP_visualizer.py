@@ -97,6 +97,23 @@ def generate_list(prefix, nbfiles):
     return u
 
 
+def generate_list2(prefix, min, max):
+    u = []
+    cyclemin = int(min)
+    cyclemax = int(max)
+    nbfiles = cyclemax - cyclemin + 1
+    for i in range(nbfiles):
+        k = i + cyclemin
+        if len(str(k)) == 1:
+            u.append(prefix + "_00" + str(k))
+        elif len(str(k)) == 2:
+            u.append(prefix + "_0" + str(k))
+        else:
+            u.append(prefix + "_" + str(k))
+        # u.reverse()
+    return u
+
+
 def ROI_data(ROI, X, Y, T):
     ROI_indices = (
         (T > ROI["Tmin"])
@@ -183,20 +200,16 @@ def update_plot(values, X, Y, T, T_raw, ax1D, fig_agg1D, ax2D, fig_agg2D, nb_of_
     cmap = plt.get_cmap(values["colormap"])
     coeff = 1.0
     if values["2dmax"]:
-        coeff = float(values["max plot2d"])/100
+        coeff = float(values["max plot2d"]) / 100
     if values["XY"]:
-        hist= ax2D.hist2d(
-            X,
-            Y,
-            bins=np.linspace(-40, 40, int(values["bins2D"]))
-        )
+        hist = ax2D.hist2d(X, Y, bins=np.linspace(-40, 40, int(values["bins2D"])))
 
         ax2D.hist2d(
             X,
             Y,
             bins=np.linspace(-40, 40, int(values["bins2D"])),
             cmap=cmap,
-            vmax = coeff * max(hist[0].flatten())
+            vmax=coeff * max(hist[0].flatten()),
         )
         ax2D.set_xlabel("X")
         ax2D.set_ylabel("Y")
@@ -228,10 +241,10 @@ def update_plot(values, X, Y, T, T_raw, ax1D, fig_agg1D, ax2D, fig_agg2D, nb_of_
                     ),
                 ],
                 cmap=cmap,
-                vmax = coeff * max(hist[0].flatten()),
+                vmax=coeff * max(hist[0].flatten()),
             )
         if not values["ROI0"]:
-            hist=ax2D.hist2d(
+            hist = ax2D.hist2d(
                 X,
                 T,
                 bins=[
@@ -248,7 +261,7 @@ def update_plot(values, X, Y, T, T_raw, ax1D, fig_agg1D, ax2D, fig_agg2D, nb_of_
                     np.linspace(np.min(T), np.max(T), int(values["bins2D"])),
                 ],
                 cmap=cmap,
-                vmax = coeff * max(hist[0].flatten()),
+                vmax=coeff * max(hist[0].flatten()),
             )
         ax2D.set_xlabel("X")
         ax2D.set_ylabel("T")
@@ -256,7 +269,7 @@ def update_plot(values, X, Y, T, T_raw, ax1D, fig_agg1D, ax2D, fig_agg2D, nb_of_
 
         if values["ROI0"]:
             ax2D.set_ylim(float(values["Tmin"]), float(values["Tmax"]))
-            hist= ax2D.hist2d(
+            hist = ax2D.hist2d(
                 Y,
                 T,
                 bins=[
@@ -280,10 +293,10 @@ def update_plot(values, X, Y, T, T_raw, ax1D, fig_agg1D, ax2D, fig_agg2D, nb_of_
                     ),
                 ],
                 cmap=cmap,
-                vmax = coeff * max(hist[0].flatten()),
+                vmax=coeff * max(hist[0].flatten()),
             )
         if not values["ROI0"]:
-            hist=ax2D.hist2d(
+            hist = ax2D.hist2d(
                 Y,
                 T,
                 bins=[
@@ -299,7 +312,7 @@ def update_plot(values, X, Y, T, T_raw, ax1D, fig_agg1D, ax2D, fig_agg2D, nb_of_
                     np.linspace(np.min(T), np.max(T), int(values["bins2D"])),
                 ],
                 cmap=cmap,
-                vmax = coeff * max(hist[0].flatten()),
+                vmax=coeff * max(hist[0].flatten()),
             )
 
         ax2D.set_xlabel("Y")
@@ -475,11 +488,9 @@ def main(self):
             sg.Checkbox("Grid", default=False, key="grid2D"),
         ],
         [
-            sg.Checkbox(
-                "Colormap max", default=False, key="2dmax"
-            ),
+            sg.Checkbox("Colormap max", default=False, key="2dmax"),
             sg.Input(size=(6, 1), default_text=100, key="max plot2d"),
-            sg.Text("%")
+            sg.Text("%"),
         ],
         [
             sg.Combo(
@@ -544,6 +555,12 @@ def main(self):
 
     data_options_col = [
         [sg.Button("Average seq")],
+        [
+            sg.Button("Average cycles"),
+            sg.Input(size=(4, 1), default_text=str(1), key="seqmin"),
+            sg.Text("to"),
+            sg.Input(size=(4, 1), default_text=str(2), key="seqmax"),
+        ],
     ]
 
     l3col1 = [
@@ -661,7 +678,7 @@ def main(self):
                 (Xdata, Ydata, Tdata) = ROI_data(ROI_dict, X, Y, T)
             fig3D = plt.figure()
             ax = plt.axes(projection="3d")
-            xyz = np.vstack([Xdata,Ydata,Tdata])
+            xyz = np.vstack([Xdata, Ydata, Tdata])
             z2 = gaussian_kde(xyz)(xyz)
             ax.scatter3D(Xdata, Ydata, Tdata, c=z2, marker=".")
             plt.xlabel("X")
@@ -670,7 +687,6 @@ def main(self):
 
         if event == "refresh":
             sequence = values["selected_seq"]
-            # window["_123_011_"].Update("wesh la zone")
             if sequence != seq_number:
                 seq_number = sequence
                 currentDir = data.path.parent.parent / str(seq_number)
@@ -777,6 +793,46 @@ def main(self):
                 ax2D,
                 fig_agg2D,
                 len(list_of_files),
+            )
+        if event == "Average cycles":
+            X = []
+            Y = []
+            T = []
+            print(list_of_files)
+            list_of_files_to_average = generate_list2(
+                values["selected_seq"], values["seqmin"], values["seqmax"]
+            )
+            cancel_average = False
+            for k in range(len(list_of_files_to_average)):
+                print(list_of_files_to_average[k])
+                print(not list_of_files_to_average[k] in list_of_files)
+                if not list_of_files_to_average[k] in list_of_files:
+                    cancel_average = True
+                    break
+                new_path = (
+                    data.path.parent.parent
+                    / str(list_of_files_to_average[k][:3])
+                    / (str(list_of_files_to_average[k]) + ".atoms")
+                )
+                data.path = new_path
+                (Xa, Ya, Ta, T_raw) = getrawdata(new_path)
+                X = np.concatenate([X, Xa])
+                Y = np.concatenate([Y, Ya])
+                T = np.concatenate([T, Ta])
+            if cancel_average:
+                break
+            total_cycles = len(list_of_files_to_average)
+            update_plot(
+                values,
+                X,
+                Y,
+                T,
+                T_raw,
+                ax1D,
+                fig_agg1D,
+                ax2D,
+                fig_agg2D,
+                len(list_of_files_to_average),
             )
 
     plt.close()
