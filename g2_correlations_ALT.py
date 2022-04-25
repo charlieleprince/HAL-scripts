@@ -83,13 +83,13 @@ def main(self):
     # box parameters (mm/s)
     # ----------------------------------------------------------------------------------
 
-    v_z_height = 2.0
-    transverse_diameter = 4.0
+    v_z_height = 1.0
+    transverse_diameter = 10.0
 
     box1_parameters = {
         "mode": "cylindrical",
         "center": {
-            "v_x": -45,#-40.5,
+            "v_x": -42.5,#-40.5,
             "v_y": 0,#2.5,
         },
         "size": {
@@ -101,7 +101,7 @@ def main(self):
     box2_parameters = {
         "mode": "cylindrical",
         "center": {
-            "v_x": -45,#-43.7,
+            "v_x": -42.5,#-43.7,
             "v_y": 0,#1.6,
         },
         "size": {
@@ -145,6 +145,7 @@ def main(self):
                 "v_z": v_z,
             }
         )
+        df_item = df_item[df_item.v_z>vz_min-v_z_height]
         df_data = pd.concat([df_data, df_item], ignore_index=True)
 
     # we recast the ranks of the runs to genuine integers.
