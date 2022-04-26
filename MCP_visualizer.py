@@ -7,6 +7,7 @@ import matplotlib.patches as patches
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import numpy as np
 import scipy.optimize as opt
+from scipy.stats import gaussian_kde
 import PySimpleGUI as sg
 from datetime import datetime
 from PyQt5.QtWidgets import QInputDialog
@@ -96,6 +97,23 @@ def generate_list(prefix, nbfiles):
     return u
 
 
+def generate_list2(prefix, min, max):
+    u = []
+    cyclemin = int(min)
+    cyclemax = int(max)
+    nbfiles = cyclemax - cyclemin + 1
+    for i in range(nbfiles):
+        k = i + cyclemin
+        if len(str(k)) == 1:
+            u.append(prefix + "_00" + str(k))
+        elif len(str(k)) == 2:
+            u.append(prefix + "_0" + str(k))
+        else:
+            u.append(prefix + "_" + str(k))
+        # u.reverse()
+    return u
+
+
 def ROI_data(ROI, X, Y, T):
     ROI_indices = (
         (T > ROI["Tmin"])
@@ -137,13 +155,7 @@ def update_plot(values, X, Y, T, T_raw, ax1D, fig_agg1D, ax2D, fig_agg2D, nb_of_
             )
             plt.close()
             widths = np.diff(bin_borders)
-            # bin_heights = np.array(bin_heights) / nb_of_cycles
             ax1D.bar(bin_borders[:-1], bin_heights, widths, color="black")
-            # ax1D.hist(
-            #    T_raw,
-            #    bins=np.linspace(np.min(T_raw), np.max(T_raw), bins),
-            # color="black",
-            # )
         bin_heights, bin_borders, _ = plt.hist(
             T, bins=np.linspace(np.min(T), np.max(T), bins)
         )
@@ -160,12 +172,21 @@ def update_plot(values, X, Y, T, T_raw, ax1D, fig_agg1D, ax2D, fig_agg2D, nb_of_
         ax1D.set_xlabel("time (ms)")
         ax1D.set_ylabel("number of events")
     if values["X"]:
-        ax1D.hist(X, bins=np.linspace(-40, 40, bins), color="tab:blue")
+        bin_heights, bin_borders, _ = plt.hist(X, bins=np.linspace(-40, 40, bins))
+        plt.close()
+        widths = np.diff(bin_borders)
+        bin_heights = np.array(bin_heights) / nb_of_cycles
+        ax1D.bar(bin_borders[:-1], bin_heights, widths, color="tab:blue")
+        # ax1D.hist(X, bins=np.linspace(-40, 40, bins), color="tab:blue")
         ax1D.set_xlim(-40, 40)
         ax1D.set_xlabel("X (mm)")
         ax1D.set_ylabel("number of events")
     if values["Y"]:
-        ax1D.hist(Y, bins=np.linspace(-40, 40, bins), color="tab:blue")
+        bin_heights, bin_borders, _ = plt.hist(Y, bins=np.linspace(-40, 40, bins))
+        plt.close()
+        widths = np.diff(bin_borders)
+        bin_heights = np.array(bin_heights) / nb_of_cycles
+        ax1D.bar(bin_borders[:-1], bin_heights, widths, color="tab:blue")
         ax1D.set_xlabel("Y (mm)")
         ax1D.set_xlim(-40, 40)
         ax1D.set_ylabel("number of events")
@@ -177,12 +198,18 @@ def update_plot(values, X, Y, T, T_raw, ax1D, fig_agg1D, ax2D, fig_agg2D, nb_of_
     if not values["colormap"] in cmaps:
         return
     cmap = plt.get_cmap(values["colormap"])
+    coeff = 1.0
+    if values["2dmax"]:
+        coeff = float(values["max plot2d"]) / 100
     if values["XY"]:
+        hist = ax2D.hist2d(X, Y, bins=np.linspace(-40, 40, int(values["bins2D"])))
+
         ax2D.hist2d(
             X,
             Y,
             bins=np.linspace(-40, 40, int(values["bins2D"])),
             cmap=cmap,
+            vmax=coeff * max(hist[0].flatten()),
         )
         ax2D.set_xlabel("X")
         ax2D.set_ylabel("Y")
@@ -190,6 +217,18 @@ def update_plot(values, X, Y, T, T_raw, ax1D, fig_agg1D, ax2D, fig_agg2D, nb_of_
 
         if values["ROI0"]:
             ax2D.set_ylim(float(values["Tmin"]), float(values["Tmax"]))
+            hist = ax2D.hist2d(
+                X,
+                T,
+                bins=[
+                    np.linspace(-40, 40, int(values["bins2D"])),
+                    np.linspace(
+                        float(values["Tmin"]),
+                        float(values["Tmax"]),
+                        int(values["bins2D"]),
+                    ),
+                ],
+            )
             ax2D.hist2d(
                 X,
                 T,
@@ -202,8 +241,18 @@ def update_plot(values, X, Y, T, T_raw, ax1D, fig_agg1D, ax2D, fig_agg2D, nb_of_
                     ),
                 ],
                 cmap=cmap,
+                vmax=coeff * max(hist[0].flatten()),
             )
         if not values["ROI0"]:
+            hist = ax2D.hist2d(
+                X,
+                T,
+                bins=[
+                    np.linspace(-40, 40, int(values["bins2D"])),
+                    np.linspace(np.min(T), np.max(T), int(values["bins2D"])),
+                ],
+                cmap=cmap,
+            )
             ax2D.hist2d(
                 X,
                 T,
@@ -212,6 +261,7 @@ def update_plot(values, X, Y, T, T_raw, ax1D, fig_agg1D, ax2D, fig_agg2D, nb_of_
                     np.linspace(np.min(T), np.max(T), int(values["bins2D"])),
                 ],
                 cmap=cmap,
+                vmax=coeff * max(hist[0].flatten()),
             )
         ax2D.set_xlabel("X")
         ax2D.set_ylabel("T")
@@ -219,6 +269,18 @@ def update_plot(values, X, Y, T, T_raw, ax1D, fig_agg1D, ax2D, fig_agg2D, nb_of_
 
         if values["ROI0"]:
             ax2D.set_ylim(float(values["Tmin"]), float(values["Tmax"]))
+            hist = ax2D.hist2d(
+                Y,
+                T,
+                bins=[
+                    np.linspace(-40, 40, int(values["bins2D"])),
+                    np.linspace(
+                        float(values["Tmin"]),
+                        float(values["Tmax"]),
+                        int(values["bins2D"]),
+                    ),
+                ],
+            )
             ax2D.hist2d(
                 Y,
                 T,
@@ -231,8 +293,17 @@ def update_plot(values, X, Y, T, T_raw, ax1D, fig_agg1D, ax2D, fig_agg2D, nb_of_
                     ),
                 ],
                 cmap=cmap,
+                vmax=coeff * max(hist[0].flatten()),
             )
         if not values["ROI0"]:
+            hist = ax2D.hist2d(
+                Y,
+                T,
+                bins=[
+                    np.linspace(-40, 40, int(values["bins2D"])),
+                    np.linspace(np.min(T), np.max(T), int(values["bins2D"])),
+                ],
+            )
             ax2D.hist2d(
                 Y,
                 T,
@@ -241,6 +312,7 @@ def update_plot(values, X, Y, T, T_raw, ax1D, fig_agg1D, ax2D, fig_agg2D, nb_of_
                     np.linspace(np.min(T), np.max(T), int(values["bins2D"])),
                 ],
                 cmap=cmap,
+                vmax=coeff * max(hist[0].flatten()),
             )
 
         ax2D.set_xlabel("Y")
@@ -303,6 +375,7 @@ def main(self):
         defaultroi = json.load(f)
 
     list_of_files = []
+    total_cycles = 1
 
     currentDir = data.path.parent
     for currentFile in currentDir.iterdir():
@@ -353,6 +426,20 @@ def main(self):
             )
     data_buttons.reverse()
     data_col = data_buttons
+
+    qc3 = ""
+    parameters_file = data.path.parent / (data.path.stem + ".json")
+    if parameters_file.is_file():
+        with open(parameters_file, encoding="utf-8") as file:
+            sequence_parameters = json.load(file)
+        for k in range(len(sequence_parameters)):
+            qc3 += (
+                sequence_parameters[k]["name"]
+                + " : "
+                + str(np.round(sequence_parameters[k]["value"], 3))
+                + "\n"
+            )
+
     l2col1 = [
         [sg.Text("ROI selection", font="Helvetica 10 bold", justification="center")],
         [sg.Checkbox("Plot data from ROI", default=False, key="ROI0")],
@@ -401,6 +488,11 @@ def main(self):
             sg.Checkbox("Grid", default=False, key="grid2D"),
         ],
         [
+            sg.Checkbox("Colormap max", default=False, key="2dmax"),
+            sg.Input(size=(6, 1), default_text=100, key="max plot2d"),
+            sg.Text("%"),
+        ],
+        [
             sg.Combo(
                 cmaps,
                 default_value="jet",
@@ -436,8 +528,18 @@ def main(self):
 
     l2col2 = [[sg.Canvas(key="-CANVAS-")]]
 
+    qc3col = [[sg.Text(qc3, font="Helvetica 10", key="qc3params")]]
+
     l2col3 = [
-        [sg.Checkbox("test", default=True, key="testkey", text_color="orange")],
+        [
+            sg.Column(
+                qc3col,
+                size=(300, 550),
+                scrollable=True,
+                # vertical_scroll_only=True,
+                key="qc3column",
+            ),
+        ]
     ]
 
     l1col1 = [[sg.Text("Bonjour")]]
@@ -452,13 +554,12 @@ def main(self):
     ]
 
     data_options_col = [
-        [sg.Button("Combine seq")],
+        [sg.Button("Average seq")],
         [
-            sg.Checkbox(
-                "Deselect all",
-                default=False,
-                key="deselect all",
-            )
+            sg.Button("Average cycles"),
+            sg.Input(size=(4, 1), default_text=str(1), key="seqmin"),
+            sg.Text("to"),
+            sg.Input(size=(4, 1), default_text=str(2), key="seqmax"),
         ],
     ]
 
@@ -531,7 +632,9 @@ def main(self):
             break
 
         if event == "update":
-            update_plot(values, X, Y, T, T_raw, ax1D, fig_agg1D, ax2D, fig_agg2D, 1)
+            update_plot(
+                values, X, Y, T, T_raw, ax1D, fig_agg1D, ax2D, fig_agg2D, total_cycles
+            )
 
         if event == "Ok":
             if values["set to default"]:
@@ -563,16 +666,27 @@ def main(self):
             show_figure2D(fig2)
             fig2.show()
         if event == "Open 3D graph":
+            (Xdata, Ydata, Tdata) = (X, Y, T)
+            if values["ROI0"]:
+                ROI_dict = {}
+                ROI_dict["Tmin"] = float(values["Tmin"])
+                ROI_dict["Tmax"] = float(values["Tmax"])
+                ROI_dict["Xmin"] = float(values["Xmin"])
+                ROI_dict["Xmax"] = float(values["Xmax"])
+                ROI_dict["Ymin"] = float(values["Ymin"])
+                ROI_dict["Ymax"] = float(values["Ymax"])
+                (Xdata, Ydata, Tdata) = ROI_data(ROI_dict, X, Y, T)
             fig3D = plt.figure()
             ax = plt.axes(projection="3d")
-            ax.scatter3D(X, Y, T, marker=".")
+            xyz = np.vstack([Xdata, Ydata, Tdata])
+            z2 = gaussian_kde(xyz)(xyz)
+            ax.scatter3D(Xdata, Ydata, Tdata, c=z2, marker=".")
             plt.xlabel("X")
             plt.ylabel("Y")
             fig3D.show()
 
         if event == "refresh":
             sequence = values["selected_seq"]
-            # window["_123_011_"].Update("wesh la zone")
             if sequence != seq_number:
                 seq_number = sequence
                 currentDir = data.path.parent.parent / str(seq_number)
@@ -608,6 +722,10 @@ def main(self):
                 window["cycles"].Widget.canvas.yview_moveto(0.0)
             window.refresh()
             window["cycles"].contents_changed()
+            update_plot(
+                values, X, Y, T, T_raw, ax1D, fig_agg1D, ax2D, fig_agg2D, total_cycles
+            )
+            list_of_files = new_list_of_files
 
         for k in range(nbfiles):
             if event == all_buttons[k][4:]:
@@ -618,9 +736,37 @@ def main(self):
                 )
                 data.path = new_path
                 (X, Y, T, T_raw) = getrawdata(new_path)
-                update_plot(values, X, Y, T, T_raw, ax1D, fig_agg1D, ax2D, fig_agg2D, 1)
+                total_cycles = 1
+                update_plot(
+                    values,
+                    X,
+                    Y,
+                    T,
+                    T_raw,
+                    ax1D,
+                    fig_agg1D,
+                    ax2D,
+                    fig_agg2D,
+                    total_cycles,
+                )
 
-        if event == "Combine seq":
+                qc3 = ""
+                parameters_file = data.path.parent / (data.path.stem + ".json")
+                if parameters_file.is_file():
+                    with open(parameters_file, encoding="utf-8") as file:
+                        sequence_parameters = json.load(file)
+                    for k in range(len(sequence_parameters)):
+                        qc3 += (
+                            sequence_parameters[k]["name"]
+                            + " : "
+                            + str(np.round(sequence_parameters[k]["value"], 3))
+                            + "\n"
+                        )
+                window["qc3params"].update(qc3)
+                window.refresh()
+                window["qc3column"].contents_changed()
+
+        if event == "Average seq":
             X = []
             Y = []
             T = []
@@ -635,6 +781,7 @@ def main(self):
                 X = np.concatenate([X, Xa])
                 Y = np.concatenate([Y, Ya])
                 T = np.concatenate([T, Ta])
+            total_cycles = len(list_of_files)
             update_plot(
                 values,
                 X,
@@ -646,6 +793,41 @@ def main(self):
                 ax2D,
                 fig_agg2D,
                 len(list_of_files),
+            )
+        if event == "Average cycles":
+            X = []
+            Y = []
+            T = []
+            list_of_files_to_average = generate_list2(
+                values["selected_seq"], values["seqmin"], values["seqmax"]
+            )
+            cancel_average = False
+            total_cycles = len(list_of_files_to_average)
+            for k in range(len(list_of_files_to_average)):
+                if not list_of_files_to_average[k] in list_of_files:
+                    total_cycles-=1
+                else:
+                    new_path = (
+                        data.path.parent.parent
+                        / str(list_of_files_to_average[k][:3])
+                        / (str(list_of_files_to_average[k]) + ".atoms")
+                    )
+                    data.path = new_path
+                    (Xa, Ya, Ta, T_raw) = getrawdata(new_path)
+                    X = np.concatenate([X, Xa])
+                    Y = np.concatenate([Y, Ya])
+                    T = np.concatenate([T, Ta])
+            update_plot(
+                values,
+                X,
+                Y,
+                T,
+                T_raw,
+                ax1D,
+                fig_agg1D,
+                ax2D,
+                fig_agg2D,
+                total_cycles,
             )
 
     plt.close()
