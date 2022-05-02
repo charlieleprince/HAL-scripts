@@ -52,7 +52,7 @@ def spacetime_to_velocities_converter(
         (v_x, v_y, v_z) expressed in mm/s OR in units of k_lattice.
     """
     # transverse momenta
-    v_x, v_y = X / t_fall, Y / t_fall
+    v_x, v_y = (X / T) * 1e3, Y / T * 1e3
 
     # momenta along gravity axis
     v_z = (0.5 * g * T) - (L_fall / T) * 1e6
