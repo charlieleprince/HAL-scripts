@@ -61,6 +61,8 @@ def main(self):
     data.path = item.data(QtCore.Qt.UserRole)
 
     sequence_parameters_file = data.path.parent / "sequence_parameters.json"
+    if not sequence_parameters_file.is_file():
+        sequence_parameters_file = data.path.parent / "config/sequence_parameters.json"
     with open(sequence_parameters_file, encoding="utf-8") as file:
         sequence_parameters=json.load(file)
 
