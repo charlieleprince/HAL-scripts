@@ -114,6 +114,12 @@ def generate_list2(prefix, min, max):
     return u
 
 
+def ROI_unreconstructed(ROI, T_raw):
+    ROI_indices = (T_raw > ROI["Tmin"]) & (T_raw < ROI["Tmax"])
+    T_ROI = T_raw[ROI_indices]
+    return T_ROI
+
+
 def ROI_data(ROI, X, Y, T):
     ROI_indices = (
         (T > ROI["Tmin"])
@@ -141,6 +147,7 @@ def update_plot(values, X, Y, T, T_raw, ax1D, fig_agg1D, ax2D, fig_agg2D, nb_of_
         ROI_dict["Ymin"] = float(values["Ymin"])
         ROI_dict["Ymax"] = float(values["Ymax"])
         (X, Y, T) = ROI_data(ROI_dict, X, Y, T)
+        T_raw = ROI_unreconstructed(ROI_dict, T_raw)
 
     ax1D.cla()
     ax2D.cla()
@@ -805,7 +812,7 @@ def main(self):
             total_cycles = len(list_of_files_to_average)
             for k in range(len(list_of_files_to_average)):
                 if not list_of_files_to_average[k] in list_of_files:
-                    total_cycles-=1
+                    total_cycles -= 1
                 else:
                     new_path = (
                         data.path.parent.parent
