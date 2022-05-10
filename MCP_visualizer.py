@@ -32,11 +32,35 @@ CATEGORY = "MCP"  # category (note that CATEGORY="" is a valid choice)
 # sg.theme("DarkBlack")
 sg.theme("LightGrey1")
 
+g = 9.81
+
+
+def convert_to_speed(X, Y, T):
+    L_fall = 46.5e-2  # in meters
+    # transverse momenta
+    v_x, v_y = (X / T) * 1e3, Y / T * 1e3
+    # momenta along gravity axis
+    v_z = (0.5 * g * T) - (L_fall / T) * 1e6
+
+    return (v_x, v_y, v_z)
+
+
+def convert_boundaries_to_speed(Tmin, Tmax):
+    L_fall = 46.5e-2  # in meters
+    v_xmin = (-40.0 / Tmin) * 1e3
+    v_xmax = (40.0 / Tmin) * 1e3
+    v_zmin = (0.5 * g * Tmin) - (L_fall / Tmin) * 1e6
+    v_zmax = (0.5 * g * Tmax) - (L_fall / Tmax) * 1e6
+
+    return (v_xmin, v_xmax, v_zmin, v_zmax)
+
 
 def getrawdata(path):
     """loads data"""
+    v_perp_x = 1.02  # mm/ns
+    v_perp_y = 1.13  # mm/ns
     time_resolution = 1.2e-10
-    time_to_pos = 2 * 0.98e-9
+    # time_to_pos = 2 * 0.98e-9
     atoms_file = np.fromfile(path, dtype="uint64")
     times_file_path = str(path.parent) + "/" + str(path.stem) + ".times"
     times_file = np.fromfile(times_file_path, dtype="uint64")
@@ -45,8 +69,8 @@ def getrawdata(path):
 
     events_list = atoms.reshape(int(len(atoms) / 4), 4).T
 
-    Xmcp = (events_list[1] - events_list[0]) / time_to_pos
-    Ymcp = (events_list[3] - events_list[2]) / time_to_pos
+    Xmcp = 0.5 * v_perp_x * 1e9 * (events_list[1] - events_list[0])
+    Ymcp = 0.5 * v_perp_y * 1e9 * (events_list[3] - events_list[2])
 
     X = (Xmcp + Ymcp) / np.sqrt(2)
     Y = (Ymcp - Xmcp) / np.sqrt(2)
@@ -137,6 +161,7 @@ def ROI_data(ROI, X, Y, T):
 
 def update_plot(values, X, Y, T, T_raw, ax1D, fig_agg1D, ax2D, fig_agg2D, nb_of_cycles):
     cmaps = [name for name in plt.colormaps() if not name.endswith("_r")]
+    xy_lim = 40.0
     if values["ROI0"]:
         Xdata, Ydata, Tdata = X, Y, T
         ROI_dict = {}
@@ -148,14 +173,19 @@ def update_plot(values, X, Y, T, T_raw, ax1D, fig_agg1D, ax2D, fig_agg2D, nb_of_
         ROI_dict["Ymax"] = float(values["Ymax"])
         (X, Y, T) = ROI_data(ROI_dict, X, Y, T)
         T_raw = ROI_unreconstructed(ROI_dict, T_raw)
-
+        if values["conversion"]:
+            X, Y, T = convert_to_speed(X, Y, T)
+            (v_xmin, v_xmax, v_zmin, v_zmax) = convert_boundaries_to_speed(
+                float(values["Tmin"]), float(values["Tmax"])
+            )
+            xy_lim = v_xmax
     ax1D.cla()
     ax2D.cla()
-
     bins = int(values["bins1D"])
     if values["grid1D"]:
         ax1D.grid(True)
     if values["T"]:
+        x1Dlabel = "time (ms)"
         if values["unreconstructed"]:
             bin_heights, bin_borders, _ = plt.hist(
                 T_raw, bins=np.linspace(np.min(T_raw), np.max(T_raw), bins)
@@ -171,31 +201,43 @@ def update_plot(values, X, Y, T, T_raw, ax1D, fig_agg1D, ax2D, fig_agg2D, nb_of_
         bin_heights = np.array(bin_heights) / nb_of_cycles
         ax1D.bar(bin_borders[:-1], bin_heights, widths)
 
-        # ax1D.hist(T, bins=np.linspace(np.min(T), np.max(T), bins), color="tab:blue")
         if values["ROI0"]:
             ax1D.set_xlim(float(values["Tmin"]), float(values["Tmax"]))
+            if values["conversion"]:
+                ax1D.set_xlim(v_zmin, v_zmax)
+                x1Dlabel = "vz (mm/s)"
         if not values["ROI0"]:
             ax1D.set_xlim(np.min(T), np.max(T))
-        ax1D.set_xlabel("time (ms)")
+        ax1D.set_xlabel(x1Dlabel)
         ax1D.set_ylabel("number of events")
     if values["X"]:
-        bin_heights, bin_borders, _ = plt.hist(X, bins=np.linspace(-40, 40, bins))
+        x1Dlabel = "X (mm)"
+        bin_heights, bin_borders, _ = plt.hist(
+            X, bins=np.linspace(-xy_lim, xy_lim, bins)
+        )
         plt.close()
         widths = np.diff(bin_borders)
         bin_heights = np.array(bin_heights) / nb_of_cycles
         ax1D.bar(bin_borders[:-1], bin_heights, widths, color="tab:blue")
         # ax1D.hist(X, bins=np.linspace(-40, 40, bins), color="tab:blue")
-        ax1D.set_xlim(-40, 40)
-        ax1D.set_xlabel("X (mm)")
+        ax1D.set_xlim(-xy_lim, xy_lim)
+        if values["ROI0"] and values["conversion"]:
+            x1Dlabel = "vx (mm/s)"
+        ax1D.set_xlabel(x1Dlabel)
         ax1D.set_ylabel("number of events")
     if values["Y"]:
-        bin_heights, bin_borders, _ = plt.hist(Y, bins=np.linspace(-40, 40, bins))
+        x1Dlabel = "Y (mm)"
+        bin_heights, bin_borders, _ = plt.hist(
+            Y, bins=np.linspace(-xy_lim, xy_lim, bins)
+        )
         plt.close()
         widths = np.diff(bin_borders)
         bin_heights = np.array(bin_heights) / nb_of_cycles
         ax1D.bar(bin_borders[:-1], bin_heights, widths, color="tab:blue")
-        ax1D.set_xlabel("Y (mm)")
-        ax1D.set_xlim(-40, 40)
+        if values["ROI0"] and values["conversion"]:
+            x1Dlabel = "vy (mm/s)"
+        ax1D.set_xlabel(x1Dlabel)
+        ax1D.set_xlim(-xy_lim, xy_lim)
         ax1D.set_ylabel("number of events")
     if values["max events enabled"]:
         ax1D.set_ylim(0, float(values["max events"]))
@@ -209,29 +251,46 @@ def update_plot(values, X, Y, T, T_raw, ax1D, fig_agg1D, ax2D, fig_agg2D, nb_of_
     if values["2dmax"]:
         coeff = float(values["max plot2d"]) / 100
     if values["XY"]:
-        hist = ax2D.hist2d(X, Y, bins=np.linspace(-40, 40, int(values["bins2D"])))
+        x2dlabel = "X (mm)"
+        y2dlabel = "Y (mm)"
+        if values["ROI0"] and values["conversion"]:
+            x2dlabel = "vx (mm/s)"
+            y2dlabel = "vy (mm/s)"
+        hist = ax2D.hist2d(
+            X, Y, bins=np.linspace(-xy_lim, xy_lim, int(values["bins2D"]))
+        )
 
         ax2D.hist2d(
             X,
             Y,
-            bins=np.linspace(-40, 40, int(values["bins2D"])),
+            bins=np.linspace(-xy_lim, xy_lim, int(values["bins2D"])),
             cmap=cmap,
             vmax=coeff * max(hist[0].flatten()),
         )
-        ax2D.set_xlabel("X")
-        ax2D.set_ylabel("Y")
+        ax2D.set_xlabel(x2dlabel)
+        ax2D.set_ylabel(y2dlabel)
     if values["XT"]:
-
+        x2dlabel = "X (mm)"
+        y2dlabel = "T (ms)"
+        if values["ROI0"] and values["conversion"]:
+            x2dlabel = "vx (mm/s)"
+            y2dlabel = "vz (mm/s)"
         if values["ROI0"]:
             ax2D.set_ylim(float(values["Tmin"]), float(values["Tmax"]))
+            tmin = float(values["Tmin"])
+            tmax = float(values["Tmax"])
+            if values["conversion"]:
+                ax2D.set_ylim(v_zmin, v_zmax)
+                tmin = v_zmin
+                tmax = v_zmax
             hist = ax2D.hist2d(
                 X,
                 T,
                 bins=[
-                    np.linspace(-40, 40, int(values["bins2D"])),
+                    np.linspace(-xy_lim, xy_lim, int(values["bins2D"])),
                     np.linspace(
-                        float(values["Tmin"]),
-                        float(values["Tmax"]),
+                        tmin,
+                        tmax,
                         int(values["bins2D"]),
                     ),
                 ],
@@ -240,10 +299,10 @@ def update_plot(values, X, Y, T, T_raw, ax1D, fig_agg1D, ax2D, fig_agg2D, nb_of_
                 X,
                 T,
                 bins=[
-                    np.linspace(-40, 40, int(values["bins2D"])),
+                    np.linspace(-xy_lim, xy_lim, int(values["bins2D"])),
                     np.linspace(
-                        float(values["Tmin"]),
-                        float(values["Tmax"]),
+                        tmin,
+                        tmax,
                         int(values["bins2D"]),
                     ),
                 ],
@@ -255,7 +314,7 @@ def update_plot(values, X, Y, T, T_raw, ax1D, fig_agg1D, ax2D, fig_agg2D, nb_of_
                 X,
                 T,
                 bins=[
-                    np.linspace(-40, 40, int(values["bins2D"])),
+                    np.linspace(-xy_lim, xy_lim, int(values["bins2D"])),
                     np.linspace(np.min(T), np.max(T), int(values["bins2D"])),
                 ],
                 cmap=cmap,
@@ -264,26 +323,36 @@ def update_plot(values, X, Y, T, T_raw, ax1D, fig_agg1D, ax2D, fig_agg2D, nb_of_
                 X,
                 T,
                 bins=[
-                    np.linspace(-40, 40, int(values["bins2D"])),
+                    np.linspace(-xy_lim, xy_lim, int(values["bins2D"])),
                     np.linspace(np.min(T), np.max(T), int(values["bins2D"])),
                 ],
                 cmap=cmap,
                 vmax=coeff * max(hist[0].flatten()),
             )
-        ax2D.set_xlabel("X")
-        ax2D.set_ylabel("T")
+        ax2D.set_xlabel(x2dlabel)
+        ax2D.set_ylabel(y2dlabel)
     if values["YT"]:
-
+        x2dlabel = "Y (mm)"
+        y2dlabel = "T (ms)"
+        if values["ROI0"] and values["conversion"]:
+            x2dlabel = "vy (mm/s)"
+            y2dlabel = "vz (mm/s)"
         if values["ROI0"]:
             ax2D.set_ylim(float(values["Tmin"]), float(values["Tmax"]))
+            tmin = float(values["Tmin"])
+            tmax = float(values["Tmax"])
+            if values["conversion"]:
+                ax2D.set_ylim(v_zmin, v_zmax)
+                tmin = v_zmin
+                tmax = v_zmax
             hist = ax2D.hist2d(
                 Y,
                 T,
                 bins=[
-                    np.linspace(-40, 40, int(values["bins2D"])),
+                    np.linspace(-xy_lim, xy_lim, int(values["bins2D"])),
                     np.linspace(
-                        float(values["Tmin"]),
-                        float(values["Tmax"]),
+                        tmin,
+                        tmax,
                         int(values["bins2D"]),
                     ),
                 ],
@@ -292,10 +361,10 @@ def update_plot(values, X, Y, T, T_raw, ax1D, fig_agg1D, ax2D, fig_agg2D, nb_of_
                 Y,
                 T,
                 bins=[
-                    np.linspace(-40, 40, int(values["bins2D"])),
+                    np.linspace(-xy_lim, xy_lim, int(values["bins2D"])),
                     np.linspace(
-                        float(values["Tmin"]),
-                        float(values["Tmax"]),
+                        tmin,
+                        tmax,
                         int(values["bins2D"]),
                     ),
                 ],
@@ -307,7 +376,7 @@ def update_plot(values, X, Y, T, T_raw, ax1D, fig_agg1D, ax2D, fig_agg2D, nb_of_
                 Y,
                 T,
                 bins=[
-                    np.linspace(-40, 40, int(values["bins2D"])),
+                    np.linspace(-xy_lim, xy_lim, int(values["bins2D"])),
                     np.linspace(np.min(T), np.max(T), int(values["bins2D"])),
                 ],
             )
@@ -315,15 +384,15 @@ def update_plot(values, X, Y, T, T_raw, ax1D, fig_agg1D, ax2D, fig_agg2D, nb_of_
                 Y,
                 T,
                 bins=[
-                    np.linspace(-40, 40, int(values["bins2D"])),
+                    np.linspace(-xy_lim, xy_lim, int(values["bins2D"])),
                     np.linspace(np.min(T), np.max(T), int(values["bins2D"])),
                 ],
                 cmap=cmap,
                 vmax=coeff * max(hist[0].flatten()),
             )
 
-        ax2D.set_xlabel("Y")
-        ax2D.set_ylabel("T")
+        ax2D.set_xlabel(x2dlabel)
+        ax2D.set_ylabel(y2dlabel)
     if values["grid2D"]:
         ax2D.grid(True)
 
@@ -480,6 +549,7 @@ def main(self):
                 size=(6, 1), default_text=str(defaultroi["ROI 0"]["Ymax"]), key="Ymax"
             ),
         ],
+        [sg.Checkbox("Convert to speed", default=False, key="conversion")],
         [
             sg.Checkbox("Set to default", default=True, key="set to default"),
         ],
