@@ -97,6 +97,7 @@ class Correlation:
             },
         }
         self.__dict__.update(kwargs)
+        self.boxes = self.boxes.copy()
         # atoms : (mm,mm, ms) --> (mm/s, mm/s, mm/s)
         self.build_the_atoms_dataframe()
         self.apply_ROI()  # Keep only atoms in ROI
@@ -666,6 +667,26 @@ class Correlation:
         self.result["N_1-N_2"] /= self.n_cycles
         self.result["(N_1-N_2)^2"] /= self.n_cycles
         self.result["N_1+N_2"] = self.result["N_1"] + self.result["N_2"]
+
+        # ---------------
+        # On rajoute la différence et la moyenne des var1 et var2
+        # ---------------
+        self.result[f"({self.var1.name}+{self.var2.name})/2"] = (
+            self.result[self.var1.name] + self.result[self.var2.name]
+        ) / 2
+        self.result[f"({self.var1.name}-{self.var2.name})/2"] = (
+            self.result[self.var1.name] - self.result[self.var2.name]
+        ) / 2
+        self.result[f"{self.var1.name}-{self.var2.name}"] = (
+            self.result[self.var1.name] - self.result[self.var2.name]
+        )
+        self.result[f"({self.var2.name}-{self.var1.name})/2"] = (
+            self.result[self.var2.name] - self.result[self.var1.name]
+        ) / 2
+        self.result[f"{self.var2.name}-{self.var1.name}"] = (
+            self.result[self.var2.name] - self.result[self.var1.name]
+        )
+
         print("Computation is done.")
 
     def compute_correlations_different_box_scanned_fast(self):
