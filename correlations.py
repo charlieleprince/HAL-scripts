@@ -17,7 +17,7 @@ from alive_progress import alive_bar
 from tqdm import tqdm, trange
 
 
-class CorrelationNotebook:
+class Correlation:
     """
     Classe corrélation. Prend en entrée un dataframe avec X, Y et T et calcule de corrélations etc...
 
@@ -255,6 +255,8 @@ class CorrelationNotebook:
 
     def compute_correlations_different_box_scanned(self):
         """
+        /!\ Deprecated because it is too slow.... /!\
+
         Méthode pour calcul des corrélations lorsque var1 et var2 (les paramètres scannés) correspondent à deux boites différentes.
         """
         #### STEP 1 : on récupère le nombre d'atome dans les boites associées à var1 et var2. Disons que intuivement, var1 corresponde à la boîte 1 et var2 à la boîte 2 mais ce n'est pas nécessaire dans le code.
@@ -369,7 +371,7 @@ class CorrelationNotebook:
             self.compute_correlations_one_box_scanned(self.var1)
         # Cas 3 : on scanne des paramètres appartenant à deux boîtes différentes
         elif self.var1.box != self.var2.box:
-            self.compute_correlations_different_box_scanned()
+            self.compute_correlations_different_box_scanned_fast()
         # Cas 4 : on scanne des paramètres appartenant à la même boîte
         else:
             self.result = 0
@@ -622,16 +624,41 @@ class CorrelationNotebook:
         self.result = total.groupby(
             [self.var1.name, self.var2.name], as_index=False
         ).sum()
+
+        # ---------------
+        # Variance
+        # ---------------
         self.result["variance"] = (
             self.result["(N_1-N_2)^2"] / self.n_cycles
             - (self.result["N_1-N_2"] / self.n_cycles) ** 2
         )
 
+        self.result["normalized variance"] = (
+            self.result["variance"]
+            / (self.result["N_1"] + self.result["N_2"])
+            * self.n_cycles
+        )
+
+        # ---------------
+        # Calculs de g^2
+        # ---------------
         self.result["g^2"] = (
             self.result["N_1*N_2"]
             / (self.result["N_1"] * self.result["N_2"])
             * self.n_cycles
         )
+        # on enlève le shot noise si cela est demandé par l'utilisateur.
+        if self.remove_shot_noise:
+            local_condition = self.result[self.var1.name] == self.result[self.var2.name]
+            self.result.loc[local_condition, "g^2"] = (
+                (self.result["N_1*N_2"] - self.result["N_1"])
+                / (self.result["N_1"] * self.result["N_2"])
+                * self.n_cycles
+            )
+
+        # ---------------
+        # Moyennage au lieu de sommes
+        # ---------------
         # Pour l'instant, N_1, N_2 et N_1*N_2 sont des sommes et non des moyennes : on les moyenne donc.
         self.result["N_1"] /= self.n_cycles
         self.result["N_2"] /= self.n_cycles
@@ -639,14 +666,7 @@ class CorrelationNotebook:
         self.result["N_1-N_2"] /= self.n_cycles
         self.result["(N_1-N_2)^2"] /= self.n_cycles
         self.result["N_1+N_2"] = self.result["N_1"] + self.result["N_2"]
-
-        self.result["normalized variance"] = (
-            self.result["variance"] / self.result["N_1+N_2"]
-        )
-        # on enlève le shot noise si cela est demandé par l'utilisateur.
-        if self.remove_shot_noise:
-            print("I am taking off shot noise")
-            local_condition = self.result[self.var1.name] == self.result[self.var1.name]
+        print("Computation is done.")
 
     def compute_correlations_different_box_scanned_fast(self):
         """
@@ -679,6 +699,7 @@ class CorrelationNotebook:
         total = pd.merge(result_var1, result_var2, on="Cycle")
 
         #### STEP3 : computes quantites of interest
+        self.compute_result(total)
 
 
 class Variable:
@@ -693,16 +714,15 @@ class Variable:
         self.name = "ΔVx"  # son nom pour la colonne dans le dataframe
         self.min = 0  # sa valeur minimale, maximale et le nombre d'éléments
         self.max = 2
-        self.n_step = 4
+        self.step = 4
         self.values = None  # ou bien les valeurs qu'il prend (liste ou numpy array)
         self.__dict__.update(kwargs)
         if self.values == None:
             self.built_values()
-        else:
-            self.get_values_caracteristics()
+        self.get_values_caracteristics()
 
     def built_values(self):
-        self.values = np.linspace(self.min, self.max, self.n_step)
+        self.values = np.arange(self.min, self.max, self.step)
 
     def get_values_caracteristics(self):
         self.values = np.array(self.values)
@@ -715,3 +735,68 @@ class Variable:
         Renvoie la i-ième value de self.values
         """
         return self.values[i]
+
+
+import os, glob, math, random
+from pathlib import Path
+
+
+def load_data_for_correlation(folder, maximum_number_of_files=1e8):
+    """
+    Charge les .atoms d'une séquence donnée
+    """
+    ext = [".atoms"]
+    selected_files = sorted(
+        [
+            path.as_posix()
+            for path in filter(lambda path: path.suffix in ext, folder.glob("*"))
+        ]
+    )
+
+    N_files = min(len(selected_files), maximum_number_of_files)
+    Xc, Yc, Tc, Cyclec = [], [], [], []
+    for i in range(N_files):
+        path = selected_files[i]
+        X, Y, T = get_data(path)
+        cycle = np.ones(len(X)) * (1 + i)
+        Xc, Yc, Tc, Cyclec = combine(Xc, Yc, Tc, Cyclec, X, Y, T, cycle)
+    # Je crée maintenant un dataframe
+    data = np.transpose(np.array([Cyclec, Xc, Yc, Tc]))
+    df = pd.DataFrame(data, columns=["Cycle", "X", "Y", "T"])
+    return N_files, df
+
+
+def combine(Xc, Yc, Tc, Cyclec, X, Y, T, cycle):
+    """
+        Combine les positions et temps d'arrivée des atomes plus le cycle
+    correspondant aux fichier.
+    """
+    Xc = np.concatenate([Xc, X])
+    Yc = np.concatenate([Yc, Y])
+    Tc = np.concatenate([Tc, T])
+    Cyclec = np.concatenate([Cyclec, cycle])
+    return (Xc, Yc, Tc, Cyclec)
+
+
+def get_data(path):
+    v_perp_x = 1.02  # mm/ns
+    v_perp_y = 1.13  # mm/ns
+    time_resolution = 1.2e-10
+    # time_to_pos = 2 * 0.98e-9
+
+    atoms_file = np.fromfile(path, dtype="uint64")
+
+    atoms = atoms_file * time_resolution
+
+    events_list = atoms.reshape(int(len(atoms) / 4), 4).T
+
+    Xmcp = 0.5 * v_perp_x * 1e9 * (events_list[1] - events_list[0])
+    Ymcp = 0.5 * v_perp_y * 1e9 * (events_list[3] - events_list[2])
+
+    X = (Xmcp + Ymcp) / np.sqrt(2)
+    Y = (Ymcp - Xmcp) / np.sqrt(2)
+    T = (events_list[0] + events_list[1] + events_list[2] + events_list[3]) / 4
+
+    T = T * 1e3
+
+    return (X, Y, T)
