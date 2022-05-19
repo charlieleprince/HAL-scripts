@@ -263,7 +263,7 @@ def main(self):
     df_prod_piv = df_prod.pivot(index="bin1 index", columns="bin2 index", values="g2")
 
     fig, ax = plt.subplots(figsize=(12, 10))
-    sns.heatmap(df_prod_piv, vmin=0.5, vmax=3)
+    sns.heatmap(df_prod_piv, vmin=0.8, vmax=1.5)
     box_vz_array = np.linspace(vz_min, vz_max, n_boxes)
     num_ticks = 20
     # the index of the position of yticks

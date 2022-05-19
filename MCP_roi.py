@@ -567,7 +567,7 @@ def main(self):
             (X_ROI0, Y_ROI0, T_ROI0) = ROI_data(ROI0, X, Y, T)
             nb0 = len(X_ROI0)
             (X_ROI1, Y_ROI1, T_ROI1) = ROI_data(ROI1, X, Y, T)
-            nb1 = len(X_ROI1)
+            nb0 = len(X_ROI0)
             nb0norm=nb0/(nb0+nb1)
             to_mcp_dictionary.append(
                 {
