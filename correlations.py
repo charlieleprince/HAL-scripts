@@ -141,8 +141,8 @@ class Correlation:
         """
         for key, value in box.items():
             # Rappel : key est par ex "Vx" ; value est {"size":10, "position":0}
-            minimum = value["position"] - value["size"]
-            maximum = value["position"] + value["size"]
+            minimum = value["position"] - value["size"] / 2
+            maximum = value["position"] + value["size"] / 2
             df = df[((df[key] >= minimum) & (df[key] < maximum))]
         return df
 
@@ -169,7 +169,7 @@ class Correlation:
                 self.atoms = self.atoms[
                     (
                         (self.atoms[key] > entry["max"])
-                        or (self.atoms[key] < entry["min"])
+                        | (self.atoms[key] < entry["min"])
                     )
                 ]
 
