@@ -512,7 +512,7 @@ def main(self):
             qc3 += (
                 sequence_parameters[k]["name"]
                 + " : "
-                + str(np.round(sequence_parameters[k]["value"], 3))
+                + str(np.round(sequence_parameters[k]["value"], 4))
                 + "\n"
             )
 
@@ -836,7 +836,7 @@ def main(self):
                         qc3 += (
                             sequence_parameters[k]["name"]
                             + " : "
-                            + str(np.round(sequence_parameters[k]["value"], 3))
+                            + str(np.round(sequence_parameters[k]["value"], 4))
                             + "\n"
                         )
                 window["qc3params"].update(qc3)
