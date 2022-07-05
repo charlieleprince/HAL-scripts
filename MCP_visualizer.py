@@ -854,10 +854,11 @@ def main(self):
                     / (str(list_of_files[k]) + ".atoms")
                 )
                 data.path = new_path
-                (Xa, Ya, Ta, T_raw) = getrawdata(new_path)
+                (Xa, Ya, Ta, T_rawa) = getrawdata(new_path)
                 X = np.concatenate([X, Xa])
                 Y = np.concatenate([Y, Ya])
                 T = np.concatenate([T, Ta])
+                T_raw = np.concatenate([T_raw, T_rawa])
             total_cycles = len(list_of_files)
             update_plot(
                 values,
@@ -890,10 +891,11 @@ def main(self):
                         / (str(list_of_files_to_average[k]) + ".atoms")
                     )
                     data.path = new_path
-                    (Xa, Ya, Ta, T_raw) = getrawdata(new_path)
+                    (Xa, Ya, Ta, T_rawa) = getrawdata(new_path)
                     X = np.concatenate([X, Xa])
                     Y = np.concatenate([Y, Ya])
                     T = np.concatenate([T, Ta])
+                    T_raw = np.concatenate([T_raw, T_rawa])
             update_plot(
                 values,
                 X,
