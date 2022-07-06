@@ -226,7 +226,6 @@ def update_plot(values, X, Y, T, T_raw, ax1D, fig_agg1D, ax2D, fig_agg2D, nb_of_
     if values["T"]:
         x1Dlabel = "time (ms)"
         if values["unreconstructed"]:
-            print(T_raw[0])
             if values["X1"] and T_raw[0]!=[]:
                 bin_heights, bin_borders, _ = plt.hist(
                     T_raw[0], bins=np.linspace(np.min(T_raw[0]), np.max(T_raw[0]), bins)
