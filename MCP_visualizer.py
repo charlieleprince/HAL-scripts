@@ -17,6 +17,7 @@ from pathlib import Path
 import pickle
 import io
 import json
+import os
 
 # https://pysimplegui.readthedocs.io/en/latest/#persistent-window-example-running-timer-that-updates
 logger = logging.getLogger(__name__)
@@ -63,7 +64,7 @@ def getrawdata(path):
     atoms_file = np.fromfile(path, dtype="uint64")
     times_file_path = str(path.parent) + "/" + str(path.stem) + ".times"
     times_file = np.fromfile(times_file_path, dtype="uint64")
-    times = times_file * time_resolution
+    T_x2 = times_file * time_resolution * 1e3
     atoms = atoms_file * time_resolution
 
     events_list = atoms.reshape(int(len(atoms) / 4), 4).T
@@ -76,7 +77,24 @@ def getrawdata(path):
     T = (events_list[0] + events_list[1] + events_list[2] + events_list[3]) / 4
 
     T = T * 1e3
-    T_raw = times * 1e3
+
+
+    timesx1_file_path = str(path.parent) + "/" + str(path.stem) + ".timesx1"
+    if os.path.exists(timesx1_file_path):
+        timesx1_file = np.fromfile(timesx1_file_path, dtype="uint64")
+        T_x1 = timesx1_file * time_resolution * 1e3
+        timesy1_file_path = str(path.parent) + "/" + str(path.stem) + ".timesy1"
+        timesy1_file = np.fromfile(timesy1_file_path, dtype="uint64")
+        T_y1 = timesy1_file * time_resolution * 1e3
+        timesy2_file_path = str(path.parent) + "/" + str(path.stem) + ".timesy2"
+        timesy2_file = np.fromfile(timesy2_file_path, dtype="uint64")
+        T_y2 = timesy2_file * time_resolution * 1e3
+    else:
+        T_x1 = []
+        T_y1 = []
+        T_y2 = []
+
+    T_raw=[T_x1,T_x2,T_y1,T_y2]
     return (X, Y, T, T_raw)
 
 def getunreconstructed(path):
@@ -84,8 +102,11 @@ def getunreconstructed(path):
     time_resolution = 1.2e-10
 
     timesx1_file_path = str(path.parent) + "/" + str(path.stem) + ".timesx1"
-    timesx1_file = np.fromfile(timesx1_file_path, dtype="uint64")
-    T_x1 = timesx1_file * time_resolution * 1e3
+    if timesx1_file_path.is_file():
+        timesx1_file = np.fromfile(timesx1_file_path, dtype="uint64")
+        T_x1 = timesx1_file * time_resolution * 1e3
+    if not timesx1_file_path.is_file():
+        T_x1 = []
     timesy1_file_path = str(path.parent) + "/" + str(path.stem) + ".timesy1"
     timesy1_file = np.fromfile(timesy1_file_path, dtype="uint64")
     T_y1 = timesy1_file * time_resolution * 1e3
@@ -205,7 +226,8 @@ def update_plot(values, X, Y, T, T_raw, ax1D, fig_agg1D, ax2D, fig_agg2D, nb_of_
     if values["T"]:
         x1Dlabel = "time (ms)"
         if values["unreconstructed"]:
-            if values["X1"]:
+            print(T_raw[0])
+            if values["X1"] and T_raw[0]!=[]:
                 bin_heights, bin_borders, _ = plt.hist(
                     T_raw[0], bins=np.linspace(np.min(T_raw[0]), np.max(T_raw[0]), bins)
                 )
@@ -227,7 +249,7 @@ def update_plot(values, X, Y, T, T_raw, ax1D, fig_agg1D, ax2D, fig_agg2D, nb_of_
                 ax1D.plot(bin_centers, bin_heights,linewidth = '1', color= 'orange',label='X2')
                 ax1D.legend()
                 plt.legend()
-            if values["Y1"]:
+            if values["Y1"] and T_raw[2]!=[]:
                 bin_heights, bin_borders, _ = plt.hist(
                     T_raw[2], bins=np.linspace(np.min(T_raw[2]), np.max(T_raw[2]), bins)
                 )
@@ -238,7 +260,7 @@ def update_plot(values, X, Y, T, T_raw, ax1D, fig_agg1D, ax2D, fig_agg2D, nb_of_
                 ax1D.plot(bin_centers, bin_heights,linewidth = '1', color= 'green',label='Y1')
                 ax1D.legend()
                 plt.legend()
-            if values["Y2"]:
+            if values["Y2"] and T_raw[3]!=[]:
                 bin_heights, bin_borders, _ = plt.hist(
                     T_raw[3], bins=np.linspace(np.min(T_raw[3]), np.max(T_raw[3]), bins)
                 )
@@ -652,7 +674,7 @@ def main(self):
         ],
         [
             sg.Checkbox(
-                "Plot unreconstructed data", default=False, key="unreconstructed"
+                "Plot raw data", default=False, key="unreconstructed"
             ),
             sg.Checkbox("X1", default=False, key="X1"),
             sg.Checkbox("X2", default=True, key="X2"),
