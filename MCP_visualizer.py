@@ -6,14 +6,13 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import numpy as np
-import scipy.optimize as opt
+#import scipy.optimize as opt
 from scipy.stats import gaussian_kde
 import PySimpleGUI as sg
 from datetime import datetime
 from PyQt5.QtWidgets import QInputDialog
 from PyQt5.QtCore import Qt
 from PyQt5 import QtCore
-from HAL.gui.dataexplorer import getSelectionMetaDataFromCache
 from pathlib import Path
 import pickle
 import io
@@ -80,8 +79,22 @@ def getrawdata(path):
     T_raw = times * 1e3
     return (X, Y, T, T_raw)
 
+def getunreconstructed(path):
+    """loads data"""
+    time_resolution = 1.2e-10
 
-# https://stackoverflow.com/questions/66662800/update-element-using-a-function-pysimplegui
+    timesx1_file_path = str(path.parent) + "/" + str(path.stem) + ".timesx1"
+    timesx1_file = np.fromfile(timesx1_file_path, dtype="uint64")
+    T_x1 = timesx1_file * time_resolution * 1e3
+    timesy1_file_path = str(path.parent) + "/" + str(path.stem) + ".timesy1"
+    timesy1_file = np.fromfile(timesy1_file_path, dtype="uint64")
+    T_y1 = timesy1_file * time_resolution * 1e3
+    timesy2_file_path = str(path.parent) + "/" + str(path.stem) + ".timesy2"
+    timesy2_file = np.fromfile(timesy2_file_path, dtype="uint64")
+    T_y2 = timesy2_file * time_resolution * 1e3
+    return (T_x1, T_y1, T_y2)
+
+
 def draw_figure(canvas, figure):
     figure_canvas_agg = FigureCanvasTkAgg(figure, canvas)
     figure_canvas_agg.draw()
@@ -139,8 +152,13 @@ def generate_list2(prefix, min, max):
 
 
 def ROI_unreconstructed(ROI, T_raw):
-    ROI_indices = (T_raw > ROI["Tmin"]) & (T_raw < ROI["Tmax"])
-    T_ROI = T_raw[ROI_indices]
+    T_ROI = []
+    for k in range(len(T_raw)):
+        if type(T_raw[k]) ==np.ndarray:
+            ROI_indices = (T_raw[k] > ROI["Tmin"]) & (T_raw[k] < ROI["Tmax"])
+            T_ROI.append(T_raw[k][ROI_indices])
+        else:
+            T_ROI.append([])
     return T_ROI
 
 
@@ -187,12 +205,50 @@ def update_plot(values, X, Y, T, T_raw, ax1D, fig_agg1D, ax2D, fig_agg2D, nb_of_
     if values["T"]:
         x1Dlabel = "time (ms)"
         if values["unreconstructed"]:
-            bin_heights, bin_borders, _ = plt.hist(
-                T_raw, bins=np.linspace(np.min(T_raw), np.max(T_raw), bins)
-            )
-            plt.close()
-            widths = np.diff(bin_borders)
-            ax1D.bar(bin_borders[:-1], bin_heights, widths, color="black")
+            if values["X1"]:
+                bin_heights, bin_borders, _ = plt.hist(
+                    T_raw[0], bins=np.linspace(np.min(T_raw[0]), np.max(T_raw[0]), bins)
+                )
+                bin_centers = bin_borders[:-1] + np.diff(bin_borders) / 2
+                plt.close()
+                #widths = np.diff(bin_borders)
+                #ax1D.bar(bin_borders[:-1], bin_heights, widths, color="black")
+                ax1D.plot(bin_centers, bin_heights,linewidth = '1', color= 'red',label='X1')
+                ax1D.legend()
+                plt.legend()
+            if values["X2"]:
+                bin_heights, bin_borders, _ = plt.hist(
+                    T_raw[1], bins=np.linspace(np.min(T_raw[1]), np.max(T_raw[1]), bins)
+                )
+                bin_centers = bin_borders[:-1] + np.diff(bin_borders) / 2
+                plt.close()
+                #widths = np.diff(bin_borders)
+                #ax1D.bar(bin_borders[:-1], bin_heights, widths, color="black")
+                ax1D.plot(bin_centers, bin_heights,linewidth = '1', color= 'orange',label='X2')
+                ax1D.legend()
+                plt.legend()
+            if values["Y1"]:
+                bin_heights, bin_borders, _ = plt.hist(
+                    T_raw[2], bins=np.linspace(np.min(T_raw[2]), np.max(T_raw[2]), bins)
+                )
+                bin_centers = bin_borders[:-1] + np.diff(bin_borders) / 2
+                plt.close()
+                #widths = np.diff(bin_borders)
+                #ax1D.bar(bin_borders[:-1], bin_heights, widths, color="black")
+                ax1D.plot(bin_centers, bin_heights,linewidth = '1', color= 'green',label='Y1')
+                ax1D.legend()
+                plt.legend()
+            if values["Y2"]:
+                bin_heights, bin_borders, _ = plt.hist(
+                    T_raw[3], bins=np.linspace(np.min(T_raw[3]), np.max(T_raw[3]), bins)
+                )
+                bin_centers = bin_borders[:-1] + np.diff(bin_borders) / 2
+                plt.close()
+                #widths = np.diff(bin_borders)
+                #ax1D.bar(bin_borders[:-1], bin_heights, widths, color="black")
+                ax1D.plot(bin_centers, bin_heights,linewidth = '1', color= 'purple',label='Y2')
+                ax1D.legend()
+                plt.legend()
         bin_heights, bin_borders, _ = plt.hist(
             T, bins=np.linspace(np.min(T), np.max(T), bins)
         )
@@ -411,9 +467,6 @@ def main(self):
     HAL mainwindow object (granting access to all the gui attributes and methods)
     """
 
-    # get metadata from current selection
-    metadata = getSelectionMetaDataFromCache(self, update_cache=True)
-
     # -- get selected data
     selection = self.runList.selectedItems()
     if not selection:
@@ -430,7 +483,9 @@ def main(self):
         return
     # get data
     X, Y, T = data.getrawdata()
-    T_raw = data.getdatafromsingleline()
+    #T_x2 = data.getdatafromsingleline()
+    (T_x1, T_x2, T_y1, T_y2) = data.getunreconstructeddata()
+    T_raw = [T_x1,T_x2,T_y1,T_y2]
     # default ROI
 
     root = Path().home()
