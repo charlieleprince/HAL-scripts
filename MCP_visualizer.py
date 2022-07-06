@@ -598,7 +598,11 @@ def main(self):
         [
             sg.Checkbox(
                 "Plot unreconstructed data", default=False, key="unreconstructed"
-            )
+            ),
+            sg.Checkbox("X1", default=False, key="X1"),
+            sg.Checkbox("X2", default=True, key="X2"),
+            sg.Checkbox("Y1", default=False, key="Y1"),
+            sg.Checkbox("Y2", default=False, key="Y2")
         ],
         [sg.Button("Update", button_color=("white", "green"), key="update")],
     ]
@@ -621,7 +625,7 @@ def main(self):
 
     l1col1 = [[sg.Text("Bonjour")]]
     l1col2 = [[sg.Text("WORK IN PROGRESS")]]
-    l1col3 = [[sg.Button("testbouton")]]
+    l1col3 = []
     # l3col1 = [[sg.Button("testbouton")]]
     l3col2 = [[sg.Canvas(key="-CANVAS2-")]]
     l3col3 = [
@@ -912,95 +916,3 @@ def main(self):
     plt.close()
     window.close()
     # now the ROIs are set
-
-    for k in range(len(selection)):
-        item = selection[k]
-        data.path = item.data(QtCore.Qt.UserRole)
-        if not data.path.suffix == ".atoms":
-            return
-        # get data
-        X, Y, T = data.getrawdata()
-
-        to_mcp_dictionary = []
-        to_mcp_dictionary.append(
-            {
-                "name": "N_tot",
-                "value": len(X),
-                "display": "%.3g",
-                "unit": "",
-                "comment": "",
-            }
-        )
-
-        if ROI0["enabled"]:
-            (X_ROI0, Y_ROI0, T_ROI0) = ROI_data(ROI0, X, Y, T)
-
-            exportROIinfo(to_mcp_dictionary, ROI0, 0)
-            to_mcp_dictionary.append(
-                {
-                    "name": "N_ROI0",
-                    "value": len(X_ROI0),
-                    "display": "%.3g",
-                    "unit": "",
-                    "comment": "",
-                }
-            )
-
-        if ROI1["enabled"]:
-            (X_ROI1, Y_ROI1, T_ROI1) = ROI_data(ROI1, X, Y, T)
-            exportROIinfo(to_mcp_dictionary, ROI1, 1)
-            to_mcp_dictionary.append(
-                {
-                    "name": "N_ROI1",
-                    "value": len(X_ROI1),
-                    "display": "%.3g",
-                    "unit": "",
-                    "comment": "",
-                }
-            )
-        if ROI2["enabled"]:
-            (X_ROI2, Y_ROI2, T_ROI2) = ROI_data(ROI2, X, Y, T)
-            exportROIinfo(to_mcp_dictionary, ROI2, 2)
-            to_mcp_dictionary.append(
-                {
-                    "name": "N_ROI2",
-                    "value": len(X_ROI2),
-                    "display": "%.3g",
-                    "unit": "",
-                    "comment": "",
-                }
-            )
-        if ROI3["enabled"]:
-            (X_ROI3, Y_ROI3, T_ROI3) = ROI_data(ROI3, X, Y, T)
-            exportROIinfo(to_mcp_dictionary, ROI3, 3)
-            to_mcp_dictionary.append(
-                {
-                    "name": "N_ROI3",
-                    "value": len(X_ROI3),
-                    "display": "%.3g",
-                    "unit": "",
-                    "comment": "",
-                }
-            )
-
-        if ROI0["enabled"] & ROI1["enabled"]:
-            (X_ROI0, Y_ROI0, T_ROI0) = ROI_data(ROI0, X, Y, T)
-            nb0 = len(X_ROI0)
-            (X_ROI1, Y_ROI1, T_ROI1) = ROI_data(ROI1, X, Y, T)
-            nb1 = len(X_ROI1)
-            nb0norm = nb0 / (nb0 + nb1)
-            to_mcp_dictionary.append(
-                {
-                    "name": "N_ROI0/(N_ROI0+N_ROI1)",
-                    "value": nb0norm,
-                    "display": "%.3g",
-                    "unit": "",
-                    "comment": "",
-                }
-            )
-
-        MCP_stats_folder = data.path.parent / ".MCPstats"
-        MCP_stats_folder.mkdir(exist_ok=True)
-        file_name = MCP_stats_folder / data.path.stem
-        with open(str(file_name) + ".json", "w", encoding="utf-8") as file:
-            json.dump(to_mcp_dictionary, file, ensure_ascii=False, indent=4)
