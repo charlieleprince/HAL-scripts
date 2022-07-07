@@ -19,7 +19,7 @@ import io
 import json
 import os
 
-# https://pysimplegui.readthedocs.io/en/latest/#persistent-window-example-running-timer-that-updates
+
 logger = logging.getLogger(__name__)
 
 # /!\/!\/!\
@@ -500,6 +500,7 @@ def main(self):
     # get path
     item = selection[0]
     data.path = item.data(QtCore.Qt.UserRole)
+    sample = data.path.stem.split("_")[1]
     if not data.path.suffix == ".atoms":
         return
     # get data
@@ -699,8 +700,10 @@ def main(self):
         ]
     ]
 
-    l1col1 = [[sg.Text("Bonjour")]]
-    l1col2 = [[sg.Text("WORK IN PROGRESS")]]
+    l1col1 = [[sg.Text("Welcome to the HAL visualizer")]]
+    name_of_data = sample
+    l1col2 = [[sg.Text("Selected data:", font="Helvetica 10 bold"),
+    sg.Text(name_of_data, key = "name")]]
     l1col3 = []
     # l3col1 = [[sg.Button("testbouton")]]
     l3col2 = [[sg.Canvas(key="-CANVAS2-")]]
@@ -906,7 +909,8 @@ def main(self):
                     fig_agg2D,
                     total_cycles,
                 )
-
+                #print(all_buttons[k][4:])
+                name_of_data = all_buttons[k][4:]
                 qc3 = ""
                 parameters_file = data.path.parent / (data.path.stem + ".json")
                 if parameters_file.is_file():
@@ -920,6 +924,7 @@ def main(self):
                             + "\n"
                         )
                 window["qc3params"].update(qc3)
+                window["name"].update(name_of_data)
                 window.refresh()
                 window["qc3column"].contents_changed()
 
@@ -952,6 +957,8 @@ def main(self):
                 fig_agg2D,
                 len(list_of_files),
             )
+            name_of_data = str(list_of_files[len(list_of_files)-1]).split("_")[1] + " - " + str(list_of_files[0]).split("_")[1]
+            window["name"].update(name_of_data)
         if event == "Average cycles":
             X = []
             Y = []
@@ -988,6 +995,8 @@ def main(self):
                 fig_agg2D,
                 total_cycles,
             )
+            name_of_data =  str(list_of_files_to_average[0]).split("_")[1] + " - " + str(list_of_files_to_average[len(list_of_files_to_average)-1]).split("_")[1]
+            window["name"].update(name_of_data)
 
     plt.close()
     window.close()
