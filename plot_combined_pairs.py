@@ -26,6 +26,13 @@ from .libs.constants import *
 
 # --------------------------------------------------------------------------------------
 
+from matplotlib import rc
+
+rc("font", **{"family": "serif", "serif": ["ECGaramond"]})
+rc("text", usetex=True)
+red = "#B00028"
+# --------------------------------------------------------------------------------------
+
 # /!\/!\/!\
 # in order to be imported as a user script, two "global" variables
 # have to be defined: NAME and CATEGORY
@@ -59,7 +66,9 @@ def main(self):
     # Initialize data
     X, Y, T = np.empty([3, 0])
 
+    N_file = 0
     for item in selection:
+        N_file += 1
         data.path = item.data(Qt.UserRole)
         # if not data.path.suffix == ".atoms":
         #     return
@@ -118,25 +127,154 @@ def main(self):
 
     print(X)
     print(T)
+    print(N_file)
     v_x, v_y, v_z = spacetime_to_velocities_converter(X, Y, T)
     df = pd.DataFrame({"v_x": v_x, "v_y": v_y, "v_z": v_z})
     del X, Y, T
 
-    fig, axs = plt.subplots(1, 2)
+    fig, axs = plt.subplots(nrows=1, ncols=2, sharey=True, figsize=(4.5, 4.5))
 
     axs[0].hist2d(
         df["v_x"],
         df["v_z"],
         bins=[40, 100],
+        cmap="turbo",
+        rasterized=True,
     )
-    axs[0].set(xlabel="v_x (mm/s)")
-    axs[0].set(ylabel="v_z (mm/s)")
+    axs[0].set(xlabel=r"$v_x$ (mm/s)")
+    axs[0].set(ylabel=r"$v_z$ (mm/s)")
 
     axs[1].hist2d(
         df["v_y"],
         df["v_z"],
         bins=[40, 100],
+        cmap="turbo",
+        rasterized=True,
     )
-    axs[1].set(xlabel="v_y (mm/s)")
-    axs[1].set(ylabel="v_z (mm/s)")
+    axs[1].set(xlabel=r"$v_y$ (mm/s)")
+
+    axs[0].plot(
+        [df["v_x"].min(), df["v_x"].max()],
+        [40, 40],
+        color=red,
+    )
+    axs[0].plot(
+        [df["v_x"].min(), df["v_x"].max()],
+        [80, 80],
+        color=red,
+    )
+    axs[0].plot(
+        [df["v_x"].min(), df["v_x"].max()],
+        [110, 110],
+        color="tab:orange",
+    )
+    axs[0].plot(
+        [df["v_x"].min(), df["v_x"].max()],
+        [150, 150],
+        color="tab:orange",
+    )
+
+    axs[1].plot(
+        [df["v_y"].min(), df["v_y"].max()],
+        [40, 40],
+        color=red,
+    )
+    axs[1].plot(
+        [df["v_y"].min(), df["v_y"].max()],
+        [80, 80],
+        color=red,
+    )
+    axs[1].plot(
+        [df["v_y"].min(), df["v_y"].max()],
+        [110, 110],
+        color="tab:orange",
+    )
+    axs[1].plot(
+        [df["v_y"].min(), df["v_y"].max()],
+        [150, 150],
+        color="tab:orange",
+    )
+
+    plt.tight_layout()
+    plt.savefig("pairs.pdf", bbox_inches="tight")
+
+    fig.show()
+
+    df_2 = df.loc[
+        (df["v_z"] > 110)
+        & (df["v_z"] < 150)
+        # & (df["v_x"] > -100)
+        # & (df["v_x"] < 0)
+        # & (df["v_y"] > -50)
+        # & (df["v_y"] < 50)
+    ]
+
+    df = df.loc[
+        (df["v_z"] > 40)
+        & (df["v_z"] < 80)
+        # & (df["v_x"] > -100)
+        # & (df["v_x"] < 0)
+        # & (df["v_y"] > -50)
+        # & (df["v_y"] < 50)
+    ]
+
+    fig, axs = plt.subplots(nrows=2, ncols=3, figsize=(6.5, 4.5))
+
+    axs[0, 0].set(ylabel=r"$\overline{N}_v$ (mm/s)${}^{-1}$")
+    axs[1, 0].set(ylabel=r"$\overline{N}_v$ (mm/s)${}^{-1}$")
+    axs[1, 0].set(xlabel=r"$v_x$ (mm/s)")
+    axs[1, 1].set(xlabel=r"$v_y$ (mm/s)")
+    axs[1, 2].set(xlabel=r"$v_z$ (mm/s)")
+
+    axs[0, 1].sharey(axs[0, 0])
+    axs[0, 2].sharey(axs[0, 0])
+    axs[1, 1].sharey(axs[1, 0])
+    axs[1, 2].sharey(axs[1, 0])
+
+    axs[0, 0].sharex(axs[1, 0])
+    axs[0, 1].sharex(axs[1, 1])
+    axs[0, 2].sharex(axs[1, 2])
+
+    axs[0, 0].grid()
+    axs[0, 1].grid()
+    axs[0, 2].grid()
+    axs[1, 0].grid()
+    axs[1, 1].grid()
+    axs[1, 2].grid()
+
+    hist_Vx = np.histogram(df["v_x"], bins=100)
+    bin_width_Vx = hist_Vx[1][1] - hist_Vx[1][0]
+    bin_centers_Vx = hist_Vx[1][:-1] + 0.5 * bin_width_Vx
+
+    hist_Vy = np.histogram(df["v_y"], bins=100)
+    bin_width_Vy = hist_Vy[1][1] - hist_Vy[1][0]
+    bin_centers_Vy = hist_Vy[1][:-1] + 0.5 * bin_width_Vy
+
+    hist_Vz = np.histogram(df["v_z"], bins=100)
+    bin_width_Vz = hist_Vz[1][1] - hist_Vz[1][0]
+    bin_centers_Vz = hist_Vz[1][:-1] + 0.5 * bin_width_Vz
+
+    axs[0, 0].plot(bin_centers_Vx, hist_Vx[0] / (N_file * bin_width_Vx), color=red)
+    axs[0, 1].plot(bin_centers_Vy, hist_Vy[0] / (N_file * bin_width_Vy), color=red)
+    axs[0, 2].plot(bin_centers_Vz, hist_Vy[0] / (N_file * bin_width_Vz), color=red)
+
+    hist_Vx = np.histogram(df_2["v_x"], bins=100)
+    bin_width_Vx = hist_Vx[1][1] - hist_Vx[1][0]
+    bin_centers_Vx = hist_Vx[1][:-1] + 0.5 * bin_width_Vx
+
+    hist_Vy = np.histogram(df_2["v_y"], bins=100)
+    bin_width_Vy = hist_Vy[1][1] - hist_Vy[1][0]
+    bin_centers_Vy = hist_Vy[1][:-1] + 0.5 * bin_width_Vy
+
+    hist_Vz = np.histogram(df_2["v_z"], bins=100)
+    bin_width_Vz = hist_Vz[1][1] - hist_Vz[1][0]
+    bin_centers_Vz = hist_Vz[1][:-1] + 0.5 * bin_width_Vz
+
+    axs[1, 0].plot(bin_centers_Vx, hist_Vx[0] / (N_file * bin_width_Vx), color=red)
+    axs[1, 1].plot(bin_centers_Vy, hist_Vy[0] / (N_file * bin_width_Vy), color=red)
+    axs[1, 2].plot(bin_centers_Vz, hist_Vy[0] / (N_file * bin_width_Vz), color=red)
+
+    plt.tight_layout()
+    # plt.savefig("pairs.pdf", bbox_inches="tight")
+
     fig.show()

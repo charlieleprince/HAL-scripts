@@ -1,9 +1,9 @@
 {
     "global": {
         "vz_min": 50.0,
-        "vz_max": 140.0,
-        "v_z_height": 0.9,
-        "transverse_diameter": 18.4
+        "vz_max": 135.0,
+        "v_z_height": 0.4,
+        "transverse_diameter": 10
     },
     "box1": {
         "mode": "cylindrical",

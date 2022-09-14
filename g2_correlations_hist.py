@@ -28,6 +28,14 @@ from .libs.constants import *
 from HAL.gui.dataexplorer import getSelectionMetaDataFromCache
 
 # --------------------------------------------------------------------------------------
+# # rendering
+# from matplotlib import rc
+
+# rc("font", **{"family": "serif", "serif": ["ECGaramond"]})
+# rc("text", usetex=True)
+# red = "#B00028"
+# --------------------------------------------------------------------------------------
+
 
 # /!\/!\/!\
 # in order to be imported as a user script, two "global" variables
@@ -262,10 +270,18 @@ def main(self):
 
     df_prod_piv = df_prod.pivot(index="bin1 index", columns="bin2 index", values="g2")
 
-    fig, ax = plt.subplots(figsize=(12, 10))
-    sns.heatmap(df_prod_piv, vmin=0.8, vmax=1.5)
+    fig, ax = plt.subplots(figsize=(4.5, 3.5))
+
+    sns.heatmap(
+        df_prod_piv,
+        vmin=1,
+        vmax=2,
+        cmap="turbo",
+        square=True,
+        rasterized=True,
+    )
     box_vz_array = np.linspace(vz_min, vz_max, n_boxes)
-    num_ticks = 20
+    num_ticks = 10
     # the index of the position of yticks
     ticks = np.linspace(0, len(box_vz_array) - 1, num_ticks, dtype=int)
     # the content of labels of these yticks
@@ -274,7 +290,11 @@ def main(self):
     ax.set_xticklabels(ticklabels)
     ax.set_yticks(ticks)
     ax.set_yticklabels(ticklabels)
-    ax.set_xlabel("Vz box1 (mm/s)")
-    ax.set_xlabel("Vz box2 (mm/s)")
+    ax.set_xlabel(r"$v_z^1$ (mm/s)")
+    ax.set_ylabel(r"$v_z^2$ (mm/s)")
     ax.invert_yaxis()
+
+    plt.tight_layout()
+
+    # plt.savefig("g2.pdf", bbox_inches="tight")
     plt.show()
