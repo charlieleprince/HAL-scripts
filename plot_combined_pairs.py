@@ -129,10 +129,25 @@ def main(self):
     print(T)
     print(N_file)
     v_x, v_y, v_z = spacetime_to_velocities_converter(X, Y, T)
-    df = pd.DataFrame({"v_x": v_x, "v_y": v_y, "v_z": v_z})
+
+    v_lat = 93
+    q_x, q_y, q_z = v_x / v_lat, v_y / v_lat, v_z / v_lat
+
+    # df = pd.DataFrame({"v_x": v_x, "v_y": v_y, "v_z": v_z})
+    df = pd.DataFrame({"v_x": q_x, "v_y": q_y, "v_z": q_z})
     del X, Y, T
 
-    fig, axs = plt.subplots(nrows=1, ncols=2, sharey=True, figsize=(4.5, 4.5))
+    min_Vz_1 = 40
+    max_Vz_1 = 80
+    min_Vz_2 = 110
+    max_Vz_2 = 150
+
+    min_Vz_1 /= v_lat
+    max_Vz_1 /= v_lat
+    min_Vz_2 /= v_lat
+    max_Vz_2 /= v_lat
+
+    fig, axs = plt.subplots(nrows=1, ncols=2, sharey=True, figsize=(5, 5))
 
     axs[0].hist2d(
         df["v_x"],
@@ -141,8 +156,10 @@ def main(self):
         cmap="turbo",
         rasterized=True,
     )
-    axs[0].set(xlabel=r"$v_x$ (mm/s)")
-    axs[0].set(ylabel=r"$v_z$ (mm/s)")
+    # axs[0].set(xlabel=r"$v_x$ (mm/s)")
+    # axs[0].set(ylabel=r"$v_z$ (mm/s)")
+    axs[0].set(xlabel=r"$q_x$ ($\hbar k_{lat}$)")
+    axs[0].set(ylabel=r"$q_z$ ($\hbar k_{lat}$)")
 
     axs[1].hist2d(
         df["v_y"],
@@ -151,89 +168,116 @@ def main(self):
         cmap="turbo",
         rasterized=True,
     )
-    axs[1].set(xlabel=r"$v_y$ (mm/s)")
+    # axs[1].set(xlabel=r"$v_y$ (mm/s)")
+    axs[1].set(xlabel=r"$q_y$ ($\hbar k_{lat}$)")
 
     axs[0].plot(
         [df["v_x"].min(), df["v_x"].max()],
-        [40, 40],
+        [min_Vz_1, min_Vz_1],
         color=red,
+        linewidth=4,
+        linestyle="dashed",
     )
     axs[0].plot(
         [df["v_x"].min(), df["v_x"].max()],
-        [80, 80],
+        [max_Vz_1, max_Vz_1],
         color=red,
+        linewidth=4,
+        linestyle="dashed",
     )
     axs[0].plot(
         [df["v_x"].min(), df["v_x"].max()],
-        [110, 110],
+        [min_Vz_2, min_Vz_2],
         color="tab:orange",
+        linewidth=4,
+        linestyle="dashed",
     )
     axs[0].plot(
         [df["v_x"].min(), df["v_x"].max()],
-        [150, 150],
+        [max_Vz_2, max_Vz_2],
         color="tab:orange",
+        linewidth=4,
+        linestyle="dashed",
     )
 
     axs[1].plot(
         [df["v_y"].min(), df["v_y"].max()],
-        [40, 40],
+        [min_Vz_1, min_Vz_1],
         color=red,
+        linewidth=4,
+        linestyle="dashed",
     )
     axs[1].plot(
         [df["v_y"].min(), df["v_y"].max()],
-        [80, 80],
+        [max_Vz_1, max_Vz_1],
         color=red,
+        linewidth=4,
+        linestyle="dashed",
     )
     axs[1].plot(
         [df["v_y"].min(), df["v_y"].max()],
-        [110, 110],
+        [min_Vz_2, min_Vz_2],
         color="tab:orange",
+        linewidth=4,
+        linestyle="dashed",
     )
     axs[1].plot(
         [df["v_y"].min(), df["v_y"].max()],
-        [150, 150],
+        [max_Vz_2, max_Vz_2],
         color="tab:orange",
+        linewidth=4,
+        linestyle="dashed",
     )
 
     plt.tight_layout()
-    plt.savefig("pairs.pdf", bbox_inches="tight")
+    plt.savefig("pairs_density_2D.pdf", bbox_inches="tight")
 
     fig.show()
 
-    df_2 = df.loc[
-        (df["v_z"] > 110)
-        & (df["v_z"] < 150)
-        # & (df["v_x"] > -100)
-        # & (df["v_x"] < 0)
-        # & (df["v_y"] > -50)
-        # & (df["v_y"] < 50)
-    ]
+    # df_2 = df.loc[
+    #     (df["v_z"] > 110)
+    #     & (df["v_z"] < 150)
+    #     # & (df["v_x"] > -100)
+    #     # & (df["v_x"] < 0)
+    #     # & (df["v_y"] > -50)
+    #     # & (df["v_y"] < 50)
+    # ]
+    df_2 = df.loc[(df["v_z"] > min_Vz_2) & (df["v_z"] < max_Vz_2)]
 
-    df = df.loc[
-        (df["v_z"] > 40)
-        & (df["v_z"] < 80)
-        # & (df["v_x"] > -100)
-        # & (df["v_x"] < 0)
-        # & (df["v_y"] > -50)
-        # & (df["v_y"] < 50)
-    ]
+    # df = df.loc[
+    #     (df["v_z"] > 40)
+    #     & (df["v_z"] < 80)
+    #     # & (df["v_x"] > -100)
+    #     # & (df["v_x"] < 0)
+    #     # & (df["v_y"] > -50)
+    #     # & (df["v_y"] < 50)
+    # ]
+    df = df.loc[(df["v_z"] > min_Vz_1) & (df["v_z"] < max_Vz_1)]
 
-    fig, axs = plt.subplots(nrows=2, ncols=3, figsize=(6.5, 4.5))
+    fig, axs = plt.subplots(
+        nrows=2, ncols=3, figsize=(5, 5), sharex="col", sharey="row"
+    )
 
-    axs[0, 0].set(ylabel=r"$\overline{N}_v$ (mm/s)${}^{-1}$")
-    axs[1, 0].set(ylabel=r"$\overline{N}_v$ (mm/s)${}^{-1}$")
-    axs[1, 0].set(xlabel=r"$v_x$ (mm/s)")
-    axs[1, 1].set(xlabel=r"$v_y$ (mm/s)")
-    axs[1, 2].set(xlabel=r"$v_z$ (mm/s)")
+    # axs[0, 0].set(ylabel=r"$\overline{N}_v$ (mm/s)${}^{-1}$")
+    # axs[1, 0].set(ylabel=r"$\overline{N}_v$ (mm/s)${}^{-1}$")
+    # axs[1, 0].set(xlabel=r"$v_x$ (mm/s)")
+    # axs[1, 1].set(xlabel=r"$v_y$ (mm/s)")
+    # axs[1, 2].set(xlabel=r"$v_z$ (mm/s)")
 
-    axs[0, 1].sharey(axs[0, 0])
-    axs[0, 2].sharey(axs[0, 0])
-    axs[1, 1].sharey(axs[1, 0])
-    axs[1, 2].sharey(axs[1, 0])
+    axs[0, 0].set(ylabel=r"$\overline{N}_q$ ($[\hbar k_{lat}]^{-1}$)")
+    axs[1, 0].set(ylabel=r"$\overline{N}_q$ ($[\hbar k_{lat}]^{-1}$)")
+    axs[1, 0].set(xlabel=r"$q_x$ ($\hbar k_{lat}$)")
+    axs[1, 1].set(xlabel=r"$q_y$ ($\hbar k_{lat}$)")
+    axs[1, 2].set(xlabel=r"$q_z$ ($\hbar k_{lat}$)")
 
-    axs[0, 0].sharex(axs[1, 0])
-    axs[0, 1].sharex(axs[1, 1])
-    axs[0, 2].sharex(axs[1, 2])
+    # axs[0, 1].sharey(axs[0, 0])
+    # axs[0, 2].sharey(axs[0, 0])
+    # axs[1, 1].sharey(axs[1, 0])
+    # axs[1, 2].sharey(axs[1, 0])
+
+    # axs[0, 0].sharex(axs[1, 0])
+    # axs[0, 1].sharex(axs[1, 1])
+    # axs[0, 2].sharex(axs[1, 2])
 
     axs[0, 0].grid()
     axs[0, 1].grid()
@@ -242,15 +286,15 @@ def main(self):
     axs[1, 1].grid()
     axs[1, 2].grid()
 
-    hist_Vx = np.histogram(df["v_x"], bins=100)
+    hist_Vx = np.histogram(df["v_x"], bins=200)
     bin_width_Vx = hist_Vx[1][1] - hist_Vx[1][0]
     bin_centers_Vx = hist_Vx[1][:-1] + 0.5 * bin_width_Vx
 
-    hist_Vy = np.histogram(df["v_y"], bins=100)
+    hist_Vy = np.histogram(df["v_y"], bins=200)
     bin_width_Vy = hist_Vy[1][1] - hist_Vy[1][0]
     bin_centers_Vy = hist_Vy[1][:-1] + 0.5 * bin_width_Vy
 
-    hist_Vz = np.histogram(df["v_z"], bins=100)
+    hist_Vz = np.histogram(df["v_z"], bins=200)
     bin_width_Vz = hist_Vz[1][1] - hist_Vz[1][0]
     bin_centers_Vz = hist_Vz[1][:-1] + 0.5 * bin_width_Vz
 
@@ -258,23 +302,29 @@ def main(self):
     axs[0, 1].plot(bin_centers_Vy, hist_Vy[0] / (N_file * bin_width_Vy), color=red)
     axs[0, 2].plot(bin_centers_Vz, hist_Vy[0] / (N_file * bin_width_Vz), color=red)
 
-    hist_Vx = np.histogram(df_2["v_x"], bins=100)
+    hist_Vx = np.histogram(df_2["v_x"], bins=200)
     bin_width_Vx = hist_Vx[1][1] - hist_Vx[1][0]
     bin_centers_Vx = hist_Vx[1][:-1] + 0.5 * bin_width_Vx
 
-    hist_Vy = np.histogram(df_2["v_y"], bins=100)
+    hist_Vy = np.histogram(df_2["v_y"], bins=200)
     bin_width_Vy = hist_Vy[1][1] - hist_Vy[1][0]
     bin_centers_Vy = hist_Vy[1][:-1] + 0.5 * bin_width_Vy
 
-    hist_Vz = np.histogram(df_2["v_z"], bins=100)
+    hist_Vz = np.histogram(df_2["v_z"], bins=200)
     bin_width_Vz = hist_Vz[1][1] - hist_Vz[1][0]
     bin_centers_Vz = hist_Vz[1][:-1] + 0.5 * bin_width_Vz
 
-    axs[1, 0].plot(bin_centers_Vx, hist_Vx[0] / (N_file * bin_width_Vx), color=red)
-    axs[1, 1].plot(bin_centers_Vy, hist_Vy[0] / (N_file * bin_width_Vy), color=red)
-    axs[1, 2].plot(bin_centers_Vz, hist_Vy[0] / (N_file * bin_width_Vz), color=red)
+    axs[1, 0].plot(
+        bin_centers_Vx, hist_Vx[0] / (N_file * bin_width_Vx), color="tab:orange"
+    )
+    axs[1, 1].plot(
+        bin_centers_Vy, hist_Vy[0] / (N_file * bin_width_Vy), color="tab:orange"
+    )
+    axs[1, 2].plot(
+        bin_centers_Vz, hist_Vy[0] / (N_file * bin_width_Vz), color="tab:orange"
+    )
 
     plt.tight_layout()
-    # plt.savefig("pairs.pdf", bbox_inches="tight")
+    plt.savefig("pairs_density_1D.pdf", bbox_inches="tight")
 
     fig.show()
