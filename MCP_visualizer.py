@@ -6,7 +6,8 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import numpy as np
-#import scipy.optimize as opt
+
+# import scipy.optimize as opt
 from scipy.stats import gaussian_kde
 import PySimpleGUI as sg
 from datetime import datetime
@@ -78,7 +79,6 @@ def getrawdata(path):
 
     T = T * 1e3
 
-
     timesx1_file_path = str(path.parent) + "/" + str(path.stem) + ".timesx1"
     if os.path.exists(timesx1_file_path):
         timesx1_file = np.fromfile(timesx1_file_path, dtype="uint64")
@@ -94,8 +94,9 @@ def getrawdata(path):
         T_y1 = []
         T_y2 = []
 
-    T_raw=[T_x1,T_x2,T_y1,T_y2]
+    T_raw = [T_x1, T_x2, T_y1, T_y2]
     return (X, Y, T, T_raw)
+
 
 def getunreconstructed(path):
     """loads data"""
@@ -175,7 +176,7 @@ def generate_list2(prefix, min, max):
 def ROI_unreconstructed(ROI, T_raw):
     T_ROI = []
     for k in range(len(T_raw)):
-        if type(T_raw[k]) ==np.ndarray:
+        if type(T_raw[k]) == np.ndarray:
             ROI_indices = (T_raw[k] > ROI["Tmin"]) & (T_raw[k] < ROI["Tmax"])
             T_ROI.append(T_raw[k][ROI_indices])
         else:
@@ -226,15 +227,17 @@ def update_plot(values, X, Y, T, T_raw, ax1D, fig_agg1D, ax2D, fig_agg2D, nb_of_
     if values["T"]:
         x1Dlabel = "time (ms)"
         if values["unreconstructed"]:
-            if values["X1"] and T_raw[0]!=[]:
+            if values["X1"] and T_raw[0] != []:
                 bin_heights, bin_borders, _ = plt.hist(
                     T_raw[0], bins=np.linspace(np.min(T_raw[0]), np.max(T_raw[0]), bins)
                 )
                 bin_centers = bin_borders[:-1] + np.diff(bin_borders) / 2
                 plt.close()
-                #widths = np.diff(bin_borders)
-                #ax1D.bar(bin_borders[:-1], bin_heights, widths, color="black")
-                ax1D.plot(bin_centers, bin_heights,linewidth = '1', color= 'red',label='X1')
+                # widths = np.diff(bin_borders)
+                # ax1D.bar(bin_borders[:-1], bin_heights, widths, color="black")
+                ax1D.plot(
+                    bin_centers, bin_heights, linewidth="1", color="red", label="X1"
+                )
                 ax1D.legend()
                 plt.legend()
             if values["X2"]:
@@ -243,31 +246,37 @@ def update_plot(values, X, Y, T, T_raw, ax1D, fig_agg1D, ax2D, fig_agg2D, nb_of_
                 )
                 bin_centers = bin_borders[:-1] + np.diff(bin_borders) / 2
                 plt.close()
-                #widths = np.diff(bin_borders)
-                #ax1D.bar(bin_borders[:-1], bin_heights, widths, color="black")
-                ax1D.plot(bin_centers, bin_heights,linewidth = '1', color= 'orange',label='X2')
+                # widths = np.diff(bin_borders)
+                # ax1D.bar(bin_borders[:-1], bin_heights, widths, color="black")
+                ax1D.plot(
+                    bin_centers, bin_heights, linewidth="1", color="orange", label="X2"
+                )
                 ax1D.legend()
                 plt.legend()
-            if values["Y1"] and T_raw[2]!=[]:
+            if values["Y1"] and T_raw[2] != []:
                 bin_heights, bin_borders, _ = plt.hist(
                     T_raw[2], bins=np.linspace(np.min(T_raw[2]), np.max(T_raw[2]), bins)
                 )
                 bin_centers = bin_borders[:-1] + np.diff(bin_borders) / 2
                 plt.close()
-                #widths = np.diff(bin_borders)
-                #ax1D.bar(bin_borders[:-1], bin_heights, widths, color="black")
-                ax1D.plot(bin_centers, bin_heights,linewidth = '1', color= 'green',label='Y1')
+                # widths = np.diff(bin_borders)
+                # ax1D.bar(bin_borders[:-1], bin_heights, widths, color="black")
+                ax1D.plot(
+                    bin_centers, bin_heights, linewidth="1", color="green", label="Y1"
+                )
                 ax1D.legend()
                 plt.legend()
-            if values["Y2"] and T_raw[3]!=[]:
+            if values["Y2"] and T_raw[3] != []:
                 bin_heights, bin_borders, _ = plt.hist(
                     T_raw[3], bins=np.linspace(np.min(T_raw[3]), np.max(T_raw[3]), bins)
                 )
                 bin_centers = bin_borders[:-1] + np.diff(bin_borders) / 2
                 plt.close()
-                #widths = np.diff(bin_borders)
-                #ax1D.bar(bin_borders[:-1], bin_heights, widths, color="black")
-                ax1D.plot(bin_centers, bin_heights,linewidth = '1', color= 'purple',label='Y2')
+                # widths = np.diff(bin_borders)
+                # ax1D.bar(bin_borders[:-1], bin_heights, widths, color="black")
+                ax1D.plot(
+                    bin_centers, bin_heights, linewidth="1", color="purple", label="Y2"
+                )
                 ax1D.legend()
                 plt.legend()
         bin_heights, bin_borders, _ = plt.hist(
@@ -275,7 +284,7 @@ def update_plot(values, X, Y, T, T_raw, ax1D, fig_agg1D, ax2D, fig_agg2D, nb_of_
         )
         plt.close()
         widths = np.diff(bin_borders)
-        bin_heights = np.array(bin_heights) / nb_of_cycles
+        bin_heights = np.array(bin_heights, dtype=object) / nb_of_cycles
         ax1D.bar(bin_borders[:-1], bin_heights, widths)
 
         if values["ROI0"]:
@@ -294,7 +303,7 @@ def update_plot(values, X, Y, T, T_raw, ax1D, fig_agg1D, ax2D, fig_agg2D, nb_of_
         )
         plt.close()
         widths = np.diff(bin_borders)
-        bin_heights = np.array(bin_heights) / nb_of_cycles
+        bin_heights = np.array(bin_heights, dtype=object) / nb_of_cycles
         ax1D.bar(bin_borders[:-1], bin_heights, widths, color="tab:blue")
         # ax1D.hist(X, bins=np.linspace(-40, 40, bins), color="tab:blue")
         ax1D.set_xlim(-xy_lim, xy_lim)
@@ -309,7 +318,7 @@ def update_plot(values, X, Y, T, T_raw, ax1D, fig_agg1D, ax2D, fig_agg2D, nb_of_
         )
         plt.close()
         widths = np.diff(bin_borders)
-        bin_heights = np.array(bin_heights) / nb_of_cycles
+        bin_heights = np.array(bin_heights, dtype=object) / nb_of_cycles
         ax1D.bar(bin_borders[:-1], bin_heights, widths, color="tab:blue")
         if values["ROI0"] and values["conversion"]:
             x1Dlabel = "vy (mm/s)"
@@ -505,9 +514,9 @@ def main(self):
         return
     # get data
     X, Y, T = data.getrawdata()
-    #T_x2 = data.getdatafromsingleline()
+    # T_x2 = data.getdatafromsingleline()
     (T_x1, T_x2, T_y1, T_y2) = data.getunreconstructeddata()
-    T_raw = [T_x1,T_x2,T_y1,T_y2]
+    T_raw = [T_x1, T_x2, T_y1, T_y2]
     # default ROI
 
     root = Path().home()
@@ -673,13 +682,11 @@ def main(self):
             sg.Input(size=(6, 1), default_text=300, key="max events"),
         ],
         [
-            sg.Checkbox(
-                "Plot raw data", default=False, key="unreconstructed"
-            ),
+            sg.Checkbox("Plot raw data", default=False, key="unreconstructed"),
             sg.Checkbox("X1", default=False, key="X1"),
             sg.Checkbox("X2", default=True, key="X2"),
             sg.Checkbox("Y1", default=False, key="Y1"),
-            sg.Checkbox("Y2", default=False, key="Y2")
+            sg.Checkbox("Y2", default=False, key="Y2"),
         ],
         [sg.Button("Update", button_color=("white", "green"), key="update")],
     ]
@@ -702,8 +709,12 @@ def main(self):
 
     l1col1 = [[sg.Text("Welcome to the HAL visualizer")]]
     name_of_data = sample
-    l1col2 = [[sg.Text("Selected data:", font="Helvetica 10 bold"),
-    sg.Text(name_of_data, key = "name")]]
+    l1col2 = [
+        [
+            sg.Text("Selected data:", font="Helvetica 10 bold"),
+            sg.Text(name_of_data, key="name"),
+        ]
+    ]
     l1col3 = []
     # l3col1 = [[sg.Button("testbouton")]]
     l3col2 = [[sg.Canvas(key="-CANVAS2-")]]
@@ -909,7 +920,7 @@ def main(self):
                     fig_agg2D,
                     total_cycles,
                 )
-                #print(all_buttons[k][4:])
+                # print(all_buttons[k][4:])
                 name_of_data = all_buttons[k][4:]
                 qc3 = ""
                 parameters_file = data.path.parent / (data.path.stem + ".json")
@@ -957,7 +968,11 @@ def main(self):
                 fig_agg2D,
                 len(list_of_files),
             )
-            name_of_data = str(list_of_files[len(list_of_files)-1]).split("_")[1] + " - " + str(list_of_files[0]).split("_")[1]
+            name_of_data = (
+                str(list_of_files[len(list_of_files) - 1]).split("_")[1]
+                + " - "
+                + str(list_of_files[0]).split("_")[1]
+            )
             window["name"].update(name_of_data)
         if event == "Average cycles":
             X = []
@@ -995,7 +1010,13 @@ def main(self):
                 fig_agg2D,
                 total_cycles,
             )
-            name_of_data =  str(list_of_files_to_average[0]).split("_")[1] + " - " + str(list_of_files_to_average[len(list_of_files_to_average)-1]).split("_")[1]
+            name_of_data = (
+                str(list_of_files_to_average[0]).split("_")[1]
+                + " - "
+                + str(
+                    list_of_files_to_average[len(list_of_files_to_average) - 1]
+                ).split("_")[1]
+            )
             window["name"].update(name_of_data)
 
     plt.close()
