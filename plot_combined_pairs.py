@@ -26,11 +26,11 @@ from .libs.constants import *
 
 # --------------------------------------------------------------------------------------
 
-from matplotlib import rc
-
-rc("font", **{"family": "serif", "serif": ["ECGaramond"]})
-rc("text", usetex=True)
-red = "#B00028"
+# from matplotlib import rc
+#
+# rc("font", **{"family": "serif", "serif": ["ECGaramond"]})
+# rc("text", usetex=True)
+# red = "#B00028"
 # --------------------------------------------------------------------------------------
 
 # /!\/!\/!\
