@@ -228,11 +228,10 @@ def update_plot(values, X, Y, T, T_raw, ax1D, fig_agg1D, ax2D, fig_agg2D, nb_of_
         x1Dlabel = "time (ms)"
         if values["unreconstructed"]:
             if values["X1"] and T_raw[0] != []:
-                bin_heights, bin_borders, _ = plt.hist(
+                bin_heights, bin_borders = np.histogram(
                     T_raw[0], bins=np.linspace(np.min(T_raw[0]), np.max(T_raw[0]), bins)
                 )
                 bin_centers = bin_borders[:-1] + np.diff(bin_borders) / 2
-                plt.close()
                 # widths = np.diff(bin_borders)
                 # ax1D.bar(bin_borders[:-1], bin_heights, widths, color="black")
                 ax1D.plot(
@@ -241,11 +240,10 @@ def update_plot(values, X, Y, T, T_raw, ax1D, fig_agg1D, ax2D, fig_agg2D, nb_of_
                 ax1D.legend()
                 plt.legend()
             if values["X2"]:
-                bin_heights, bin_borders, _ = plt.hist(
+                bin_heights, bin_borders = np.histogram(
                     T_raw[1], bins=np.linspace(np.min(T_raw[1]), np.max(T_raw[1]), bins)
                 )
                 bin_centers = bin_borders[:-1] + np.diff(bin_borders) / 2
-                plt.close()
                 # widths = np.diff(bin_borders)
                 # ax1D.bar(bin_borders[:-1], bin_heights, widths, color="black")
                 ax1D.plot(
@@ -254,11 +252,10 @@ def update_plot(values, X, Y, T, T_raw, ax1D, fig_agg1D, ax2D, fig_agg2D, nb_of_
                 ax1D.legend()
                 plt.legend()
             if values["Y1"] and T_raw[2] != []:
-                bin_heights, bin_borders, _ = plt.hist(
+                bin_heights, bin_borders = np.histogram(
                     T_raw[2], bins=np.linspace(np.min(T_raw[2]), np.max(T_raw[2]), bins)
                 )
                 bin_centers = bin_borders[:-1] + np.diff(bin_borders) / 2
-                plt.close()
                 # widths = np.diff(bin_borders)
                 # ax1D.bar(bin_borders[:-1], bin_heights, widths, color="black")
                 ax1D.plot(
@@ -267,11 +264,10 @@ def update_plot(values, X, Y, T, T_raw, ax1D, fig_agg1D, ax2D, fig_agg2D, nb_of_
                 ax1D.legend()
                 plt.legend()
             if values["Y2"] and T_raw[3] != []:
-                bin_heights, bin_borders, _ = plt.hist(
+                bin_heights, bin_borders = np.histogram(
                     T_raw[3], bins=np.linspace(np.min(T_raw[3]), np.max(T_raw[3]), bins)
                 )
                 bin_centers = bin_borders[:-1] + np.diff(bin_borders) / 2
-                plt.close()
                 # widths = np.diff(bin_borders)
                 # ax1D.bar(bin_borders[:-1], bin_heights, widths, color="black")
                 ax1D.plot(
@@ -279,10 +275,9 @@ def update_plot(values, X, Y, T, T_raw, ax1D, fig_agg1D, ax2D, fig_agg2D, nb_of_
                 )
                 ax1D.legend()
                 plt.legend()
-        bin_heights, bin_borders, _ = plt.hist(
+        bin_heights, bin_borders = np.histogram(
             T, bins=np.linspace(np.min(T), np.max(T), bins)
         )
-        plt.close()
         widths = np.diff(bin_borders)
         bin_heights = np.array(bin_heights, dtype=object) / nb_of_cycles
         ax1D.bar(bin_borders[:-1], bin_heights, widths)
@@ -298,10 +293,9 @@ def update_plot(values, X, Y, T, T_raw, ax1D, fig_agg1D, ax2D, fig_agg2D, nb_of_
         ax1D.set_ylabel("number of events")
     if values["X"]:
         x1Dlabel = "X (mm)"
-        bin_heights, bin_borders, _ = plt.hist(
+        bin_heights, bin_borders = np.histogram(
             X, bins=np.linspace(-xy_lim, xy_lim, bins)
         )
-        plt.close()
         widths = np.diff(bin_borders)
         bin_heights = np.array(bin_heights, dtype=object) / nb_of_cycles
         ax1D.bar(bin_borders[:-1], bin_heights, widths, color="tab:blue")
@@ -313,10 +307,9 @@ def update_plot(values, X, Y, T, T_raw, ax1D, fig_agg1D, ax2D, fig_agg2D, nb_of_
         ax1D.set_ylabel("number of events")
     if values["Y"]:
         x1Dlabel = "Y (mm)"
-        bin_heights, bin_borders, _ = plt.hist(
+        bin_heights, bin_borders = np.histogram(
             Y, bins=np.linspace(-xy_lim, xy_lim, bins)
         )
-        plt.close()
         widths = np.diff(bin_borders)
         bin_heights = np.array(bin_heights, dtype=object) / nb_of_cycles
         ax1D.bar(bin_borders[:-1], bin_heights, widths, color="tab:blue")
@@ -550,14 +543,13 @@ def main(self):
     # gui layout
     cmaps = [name for name in plt.colormaps() if not name.endswith("_r")]
     fig2D, ax2D = plt.subplots(figsize=(6, 6))
-    ax2D.hist2d(X, Y, bins=np.linspace(-40, 40, 160), cmap=plt.cm.jet)
+    ax2D.hist2d(X, Y, bins=np.linspace(-40, 40, 160), cmap=plt.cm.nipy_spectral)
     ax2D.set_xlabel("X")
     ax2D.set_ylabel("Y")
 
     fig1D, ax1D = plt.subplots(figsize=(6, 3))
     # ax1D.hist(T_raw, bins=np.linspace(np.min(T_raw), np.max(T_raw), 300), color="black")
-    bin_heights, bin_borders, _ = plt.hist(T, bins=np.linspace(0, np.max(T), 300))
-    plt.close()
+    bin_heights, bin_borders = np.histogram(T, bins=np.linspace(0, np.max(T), 300))
     widths = np.diff(bin_borders)
     ax1D.bar(bin_borders[:-1], bin_heights, widths, color="tab:blue")
     # ax1D.hist(T, bins=np.linspace(0, np.max(T), 300), color="tab:blue")
@@ -658,7 +650,7 @@ def main(self):
         [
             sg.Combo(
                 cmaps,
-                default_value="jet",
+                default_value="nipy_spectral",
                 enable_events=True,
                 key="colormap",
             )
