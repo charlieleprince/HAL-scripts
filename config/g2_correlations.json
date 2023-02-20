@@ -1,0 +1,30 @@
+{
+    "global": {
+        "vz_min": 50.0,
+        "vz_max": 135.0,
+        "v_z_height": 0.4,
+        "transverse_diameter": 10
+    },
+    "box1": {
+        "mode": "cylindrical",
+        "center": {
+            "v_x": -40.5,
+            "v_y": 1.5
+        },
+        "size": {
+            "diameter": 4,
+            "height": 0.9
+        }
+    },
+    "box2": {
+        "mode": "cylindrical",
+        "center": {
+            "v_x": -40.5,
+            "v_y": 1.5
+        },
+        "size": {
+            "diameter": 4,
+            "height": 0.9
+        }
+    }
+}

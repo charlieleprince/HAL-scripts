@@ -2,26 +2,12 @@
 
 
 import logging
-import matplotlib.pyplot as plt
-import matplotlib.patches as patches
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-import numpy as np
-import scipy.optimize as opt
 import PySimpleGUI as sg
-from datetime import datetime
-from PyQt5.QtWidgets import QInputDialog
-from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QAction, QMenu, QActionGroup, QMessageBox
-from PyQt5 import QtCore
-from HAL.gui.dataexplorer import getSelectionMetaDataFromCache
 from pathlib import Path
 import PySimpleGUI as sg
 from PIL import Image
 
 # open method used to open different extension image file
-
-
-import json
 
 logger = logging.getLogger(__name__)
 
