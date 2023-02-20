@@ -1,19 +1,30 @@
 # -*- coding: utf-8 -*-
 
+# IMPORTS
+# --------------------------------------------------------------------------------------
 
+# built-in python libs
+# --------------------
 import logging
-import matplotlib.pyplot as plt
-import numpy as np
-import scipy.optimize as opt
-from datetime import datetime
-from PyQt5.QtWidgets import QInputDialog
-from PyQt5.QtCore import Qt
-from PyQt5 import QtCore
-from HAL.gui.dataexplorer import getSelectionMetaDataFromCache
-from pathlib import Path
 import json
+from pathlib import Path
 
-logger = logging.getLogger(__name__)
+# third party imports
+# -------------------
+# Qt
+from PyQt5.QtCore import Qt
+
+# misc.
+import numpy as np
+from matplotlib import pyplot as plt
+
+# local libs
+# ----------
+from HAL.gui.dataexplorer import getSelectionMetaDataFromCache
+from .libs.roi import exportROIinfo, filter_data_to_ROI
+from .libs.constants import *
+
+# --------------------------------------------------------------------------------------
 
 # /!\/!\/!\
 # in order to be imported as a user script, two "global" variables
@@ -22,115 +33,7 @@ NAME = (
     "3bis. Combine and watch ROI"  # display name, used in menubar and command palette
 )
 CATEGORY = "MCP"  # category (note that CATEGORY="" is a valid choice)
-
-
-def read_metadata(metadata, nb):
-    Xmin = metadata["current selection"]["mcp"]["--ROI" + nb + ":Xmin"][0]
-    Xmax = metadata["current selection"]["mcp"]["--ROI" + nb + ":Xmax"][0]
-    Ymin = metadata["current selection"]["mcp"]["--ROI" + nb + ":Ymin"][0]
-    Ymax = metadata["current selection"]["mcp"]["--ROI" + nb + ":Ymax"][0]
-    Tmin = metadata["current selection"]["mcp"]["--ROI" + nb + ":Tmin"][0]
-    Tmax = metadata["current selection"]["mcp"]["--ROI" + nb + ":Tmax"][0]
-    return (Xmin, Xmax, Ymin, Ymax, Tmin, Tmax)
-
-
-def ROIdata(metadata, nb, X, Y, T):
-    (Xmin, Xmax, Ymin, Ymax, Tmin, Tmax) = read_metadata(metadata, nb)
-    T_ROI = T[
-        (T > Tmin) & (T < Tmax) & (X > Xmin) & (X < Xmax) & (Y > Ymin) & (Y < Ymax)
-    ]
-    X_ROI = X[
-        (T > Tmin)
-        & (T < Tmax)
-        & (X > Xmin)
-        & (X < Xmax)
-        & (X < Xmax)
-        & (Y > Ymin)
-        & (Y < Ymax)
-    ]
-    Y_ROI = Y[
-        (T > Tmin)
-        & (T < Tmax)
-        & (X > Xmin)
-        & (X < Xmax)
-        & (X < Xmax)
-        & (Y > Ymin)
-        & (Y < Ymax)
-    ]
-    return (X_ROI, Y_ROI, T_ROI)
-
-
-def exportROIinfo(to_mcp, ROI, nb):
-    to_mcp.append(
-        {
-            "name": "--ROI" + str(nb) + ":Xmin",
-            "value": ROI["Xmin"],
-            "display": "%.3g",
-            "unit": "",
-            "comment": "",
-        }
-    )
-    to_mcp.append(
-        {
-            "name": "--ROI" + str(nb) + ":Xmax",
-            "value": ROI["Xmax"],
-            "display": "%.3g",
-            "unit": "",
-            "comment": "",
-        }
-    )
-    to_mcp.append(
-        {
-            "name": "--ROI" + str(nb) + ":Ymin",
-            "value": ROI["Ymin"],
-            "display": "%.3g",
-            "unit": "",
-            "comment": "",
-        }
-    )
-    to_mcp.append(
-        {
-            "name": "--ROI" + str(nb) + ":Ymax",
-            "value": ROI["Ymax"],
-            "display": "%.3g",
-            "unit": "",
-            "comment": "",
-        }
-    )
-    to_mcp.append(
-        {
-            "name": "--ROI" + str(nb) + ":Tmin",
-            "value": ROI["Tmin"],
-            "display": "%.3g",
-            "unit": "",
-            "comment": "",
-        }
-    )
-    to_mcp.append(
-        {
-            "name": "--ROI" + str(nb) + ":Tmax",
-            "value": ROI["Tmax"],
-            "display": "%.3g",
-            "unit": "",
-            "comment": "",
-        }
-    )
-
-
-def ROI_data(ROI, X, Y, T):
-    ROI_indices = (
-        (T > ROI["Tmin"])
-        & (T < ROI["Tmax"])
-        & (X > ROI["Xmin"])
-        & (X < ROI["Xmax"])
-        & (Y > ROI["Ymin"])
-        & (Y < ROI["Ymax"])
-    )
-    T_ROI = T[ROI_indices]
-    X_ROI = X[ROI_indices]
-    Y_ROI = Y[ROI_indices]
-    # T_raw_ROI = T_raw[ROI_indices2]
-    return (X_ROI, Y_ROI, T_ROI)
+logger = logging.getLogger(__name__)
 
 
 def main(self):
@@ -142,7 +45,6 @@ def main(self):
 
     # get metadata from current selection
     metadata = getSelectionMetaDataFromCache(self, update_cache=True)
-
     # -- get selected data
     selection = self.runList.selectedItems()
     if not selection:
@@ -151,74 +53,51 @@ def main(self):
     # get object data type
     data_class = self.dataTypeComboBox.currentData()
     data = data_class()
-
+    # get path
     root = Path().home()
     default_roi_dir = root / ".HAL"
     default_roi_file_name = default_roi_dir / "default_mcp_roi.json"
-    # get path
-    item = selection[0]
-    data.path = item.data(QtCore.Qt.UserRole)
-    X, Y, T = data.getrawdata()
-    if "N_ROI0" in metadata["current selection"]["mcp"]:
-        (X, Y, T) = ROIdata(metadata, "0", X, Y, T)
-    else:
-        with open(default_roi_file_name, encoding="utf8") as f:
-            defaultroi = json.load(f)
 
-        ROI0 = {}
-        ROI0["Xmin"] = defaultroi["ROI 0"]["Xmin"]
-        ROI0["Xmax"] = defaultroi["ROI 0"]["Xmax"]
-        ROI0["Ymin"] = defaultroi["ROI 0"]["Ymin"]
-        ROI0["Ymax"] = defaultroi["ROI 0"]["Ymax"]
-        ROI0["Tmin"] = defaultroi["ROI 0"]["Tmin"]
-        ROI0["Tmax"] = defaultroi["ROI 0"]["Tmax"]
+    # Initialize data
+    X, Y, T = np.empty([3, 0])
 
-        (X, Y, T) = ROI_data(ROI0, X, Y, T)
+    for item in selection:
+        data.path = item.data(Qt.UserRole)
+        # if not data.path.suffix == ".atoms":
+        #     return
 
-        to_mcp_dictionary = []
-        to_mcp_dictionary.append(
-            {
-                "name": "N_tot",
-                "value": len(X),
-                "display": "%.3g",
-                "unit": "",
-                "comment": "",
-            }
-        )
-        exportROIinfo(to_mcp_dictionary, ROI0, 0)
-
-        MCP_stats_folder = data.path.parent / ".MCPstats"
-        MCP_stats_folder.mkdir(exist_ok=True)
-        file_name = MCP_stats_folder / data.path.stem
-        with open(str(file_name) + ".json", "w", encoding="utf-8") as file:
-            json.dump(to_mcp_dictionary, file, ensure_ascii=False, indent=4)
-
-    for k in range(len(selection) - 1):
-        item = selection[k + 1]
-        data.path = item.data(QtCore.Qt.UserRole)
-        if not data.path.suffix == ".atoms":
-            return
         # get data
-        Xa, Ya, Ta = data.getrawdata()
+        X_item, Y_item, T_item = data.getrawdata()
 
+        # first data filter
         if "N_ROI0" in metadata["current selection"]["mcp"]:
-            (Xa, Ya, Ta) = ROIdata(metadata, "0", Xa, Ya, Ta)
+            (X_item, Y_item, T_item) = filter_data_to_ROI(
+                X_item,
+                Y_item,
+                T_item,
+                from_metadata=True,
+                metadata=metadata,
+                metadata_ROI_nb=0,
+            )
         else:
             with open(default_roi_file_name, encoding="utf8") as f:
-                defaultroi = json.load(f)
+                default_roi = json.load(f)
 
-            ROI0 = {}
-            ROI0["Xmin"] = defaultroi["ROI 0"]["Xmin"]
-            ROI0["Xmax"] = defaultroi["ROI 0"]["Xmax"]
-            ROI0["Ymin"] = defaultroi["ROI 0"]["Ymin"]
-            ROI0["Ymax"] = defaultroi["ROI 0"]["Ymax"]
-            ROI0["Tmin"] = defaultroi["ROI 0"]["Tmin"]
-            ROI0["Tmax"] = defaultroi["ROI 0"]["Tmax"]
+            def_ROI = {
+                "Xmin": default_roi["ROI 0"]["Xmin"],
+                "Xmax": default_roi["ROI 0"]["Xmax"],
+                "Ymin": default_roi["ROI 0"]["Ymin"],
+                "Ymax": default_roi["ROI 0"]["Ymax"],
+                "Tmin": default_roi["ROI 0"]["Tmin"],
+                "Tmax": default_roi["ROI 0"]["Tmax"],
+            }
 
-            (Xa, Ya, Ta) = ROI_data(ROI0, Xa, Ya, Ta)
+            (X_item, Y_item, T_item) = filter_data_to_ROI(
+                X_item, Y_item, T_item, from_metadata=False, ROI=def_ROI
+            )
 
-            to_mcp_dictionary = []
-            to_mcp_dictionary.append(
+            to_mcp_dictionaries = []
+            to_mcp_dictionaries.append(
                 {
                     "name": "N_tot",
                     "value": len(X),
@@ -227,17 +106,17 @@ def main(self):
                     "comment": "",
                 }
             )
-            exportROIinfo(to_mcp_dictionary, ROI0, 0)
+            exportROIinfo(to_mcp_dictionaries, def_ROI, 0)
 
             MCP_stats_folder = data.path.parent / ".MCPstats"
             MCP_stats_folder.mkdir(exist_ok=True)
             file_name = MCP_stats_folder / data.path.stem
             with open(str(file_name) + ".json", "w", encoding="utf-8") as file:
-                json.dump(to_mcp_dictionary, file, ensure_ascii=False, indent=4)
+                json.dump(to_mcp_dictionaries, file, ensure_ascii=False, indent=4)
 
-        X = np.concatenate([X, Xa])
-        Y = np.concatenate([Y, Ya])
-        T = np.concatenate([T, Ta])
+        X = np.concatenate([X, X_item])
+        Y = np.concatenate([Y, Y_item])
+        T = np.concatenate([T, T_item])
 
     fig3 = plt.figure()
     plt.hist2d(X, Y, bins=np.linspace(-40, 40, 2 * 81), cmap=plt.cm.jet)

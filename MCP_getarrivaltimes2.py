@@ -242,7 +242,7 @@ def main(self):
         current_mcp_metadata.append(
             {
                 "name": "ROI0 time width",
-                "value": popt[2] * 1e3,
+                "value": np.abs(popt[2] * 1e3),
                 "display": "%.2f",
                 "unit": "µs",
                 "comment": "",

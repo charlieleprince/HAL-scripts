@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 # /!\/!\/!\
 # in order to be imported as a user script, two "global" variables
 # have to be defined: NAME and CATEGORY
-NAME = "2bis. Get number of atoms & fit arrival times in default ROI0"  # display name, used in menubar and command palette
+NAME = "2.Ter. Get number of atoms in default ROI0 and ROI1 and Roi2"  # display name, used in menubar and command palette
 CATEGORY = "MCP"  # category (note that CATEGORY="" is a valid choice)
 
 
@@ -49,42 +49,6 @@ def ROI_data(ROI, X, Y, T):
 
 
 def exportROIinfo(to_mcp, ROI, nb):
-    to_mcp.append(
-        {
-            "name": "--ROI" + str(nb) + ":Xmin",
-            "value": ROI["Xmin"],
-            "display": "%.3g",
-            "unit": "",
-            "comment": "",
-        }
-    )
-    to_mcp.append(
-        {
-            "name": "--ROI" + str(nb) + ":Xmax",
-            "value": ROI["Xmax"],
-            "display": "%.3g",
-            "unit": "",
-            "comment": "",
-        }
-    )
-    to_mcp.append(
-        {
-            "name": "--ROI" + str(nb) + ":Ymin",
-            "value": ROI["Ymin"],
-            "display": "%.3g",
-            "unit": "",
-            "comment": "",
-        }
-    )
-    to_mcp.append(
-        {
-            "name": "--ROI" + str(nb) + ":Ymax",
-            "value": ROI["Ymax"],
-            "display": "%.3g",
-            "unit": "",
-            "comment": "",
-        }
-    )
     to_mcp.append(
         {
             "name": "--ROI" + str(nb) + ":Tmin",
@@ -166,13 +130,9 @@ def main(self):
     with open(default_roi_file_name, encoding="utf8") as f:
         defaultroi = json.load(f)
 
-    ROI0 = {}
-    ROI0["Xmin"] = defaultroi["ROI 0"]["Xmin"]
-    ROI0["Xmax"] = defaultroi["ROI 0"]["Xmax"]
-    ROI0["Ymin"] = defaultroi["ROI 0"]["Ymin"]
-    ROI0["Ymax"] = defaultroi["ROI 0"]["Ymax"]
-    ROI0["Tmin"] = defaultroi["ROI 0"]["Tmin"]
-    ROI0["Tmax"] = defaultroi["ROI 0"]["Tmax"]
+    ROI0 = defaultroi["ROI 0"]
+    ROI1 = defaultroi["ROI 1"]
+    ROI2 = defaultroi["ROI 2"]
 
     for k in range(len(selection)):
         item = selection[k]
@@ -183,6 +143,9 @@ def main(self):
         X, Y, T = data.getrawdata()
 
         to_mcp_dictionary = []
+        ####
+        ## NOMBRE TOTAL D'ATOME
+        ####
         to_mcp_dictionary.append(
             {
                 "name": "N_tot",
@@ -193,48 +156,84 @@ def main(self):
             }
         )
 
+        #####
+        ## NOMBRE D'ATOME DANS CHAQUE ROI
+        #####
         (X_ROI0, Y_ROI0, T_ROI0) = ROI_data(ROI0, X, Y, T)
-        (popt, pcov) = fit_time_histo(T_ROI0)
-        Temperature_t = m * (g ** 2) * ((popt[2]) ** 2) / k_B  # µK
+        (X_ROI1, Y_ROI1, T_ROI1) = ROI_data(ROI1, X, Y, T)
+        (X_ROI2, Y_ROI2, T_ROI2) = ROI_data(ROI2, X, Y, T)
 
+        N0 = len(X_ROI0)
+        N1 = len(X_ROI1)
+        N2 = len(X_ROI2)
+
+        ####
+        ## SAUVEGARDE DES PARAMÈTRES DE ROI
+        ####
         exportROIinfo(to_mcp_dictionary, ROI0, 0)
+        exportROIinfo(to_mcp_dictionary, ROI1, 1)
+        exportROIinfo(to_mcp_dictionary, ROI2, 2)
+
+        ####
+        ## NOMBRE D'ATOME PAR ROI
+        ####
         to_mcp_dictionary.append(
             {
                 "name": "N_ROI0",
-                "value": len(X_ROI0),
+                "value": N0,
                 "display": "%.3g",
                 "unit": "",
                 "comment": "",
             }
         )
+        to_mcp_dictionary.append(
+            {
+                "name": "N_ROI1",
+                "value": N1,
+                "display": "%.3g",
+                "unit": "",
+                "comment": "",
+            }
+        )
+        to_mcp_dictionary.append(
+            {
+                "name": "N_ROI2",
+                "value": N2,
+                "display": "%.3g",
+                "unit": "",
+                "comment": "",
+            }
+        )
+        N012 = N0 + N1 + N2
 
-        to_mcp_dictionary.append(
-            {
-                "name": "ROI0 arrival time",
-                "value": popt[0],
-                "display": "%.2f",
-                "unit": "ms",
-                "comment": "",
-            }
-        )
-        to_mcp_dictionary.append(
-            {
-                "name": "ROI0 time width",
-                "value": np.abs(popt[2] * 1e3),
-                "display": "%.2f",
-                "unit": "µs",
-                "comment": "",
-            }
-        )
-        to_mcp_dictionary.append(
-            {
-                "name": "ROI0 temperature",
-                "value": Temperature_t,
-                "display": "%.2f",
-                "unit": "µK",
-                "comment": "",
-            }
-        )
+        if N012 > 0:
+            to_mcp_dictionary.append(
+                {
+                    "name": "N_0 / N_tot",
+                    "value": N0 / N012,
+                    "display": "%.3g",
+                    "unit": "",
+                    "comment": "",
+                }
+            )
+            to_mcp_dictionary.append(
+                {
+                    "name": "N_1 / N_tot",
+                    "value": N1 / N012,
+                    "display": "%.3g",
+                    "unit": "",
+                    "comment": "",
+                }
+            )
+            to_mcp_dictionary.append(
+                {
+                    "name": "N_2 / N_tot",
+                    "value": N2 / N012,
+                    "display": "%.3g",
+                    "unit": "",
+                    "comment": "",
+                }
+            )
 
         MCP_stats_folder = data.path.parent / ".MCPstats"
         MCP_stats_folder.mkdir(exist_ok=True)
