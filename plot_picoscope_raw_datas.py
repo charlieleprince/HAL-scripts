@@ -40,8 +40,7 @@ def main(self):
     # if data.path is something like /mnt/manip_E/2023/02/12/003/003_018.png
     # data.stem is 003_018
     # and data.parent is /mnt/manip_E/2023/02/12/003/
-    file_name = data.with_suffix(".mon_suffixe")
-    file_name = Path(str(file_name).replace(".mon_suffixe", "_picoscope_raw.npy"))
+    file_name = data.with_suffix(".picoscope_raw_data")
     print("--------------")
     print(file_name)
     if not file_name.is_file():
@@ -49,6 +48,45 @@ def main(self):
         self.metaDataText.setPlainText(Text)
         return
     # load data
+
+    try:
+        df = pd.read_pickle(path)
+        column_names = list(df.columns)
+
+        graph_titles = [
+            col_name
+            for col_name in column_names
+            if not ("Time" in col_name or "fitted" in col_name)
+        ]
+        time = df["Time"]
+        fig, axs = plt.subplots(2, 2)
+        for i, ax in enumerate(axs.flat):
+            name = graph_titles[i]
+            s = df[name]
+            sfit = df[name + " fitted"]
+            ax.plot(
+                time,
+                s,
+                ls="None",
+                marker=".",
+                label="Exp",
+                alpha=0.8,
+            )
+            ax.plot(
+                time,
+                sfit,
+                ls="-",
+                marker="None",
+                label="Fit",
+                alpha=0.8,
+            )
+            ax.set(xlabel="Time (ms)", ylabel=name + " (V)")
+            # ax.label_outer()
+            ax.legend()
+        plt.tight_layout()
+    except:
+        print("")
+    plt.show()
     data = np.load(file_name)
     # data[0] = Temps // data[i] = Voie i avec 1 <-> A ; 2 <-> B ; 3 <-> C ; 4 <-> D
     plt.clf()
@@ -62,6 +100,8 @@ def main(self):
         plt.ylabel("Measured signal (V)")
         plt.legend()
         plt.show()
-    except (TypeError, ValueError, IndexError):
+    except:
+        Text = f"Not possible to show the image. \n Please check you dataframe file : \n {file_name} \n We recall that the picoscope_raw_file  \n format is the following : \n One column named 'Time' and 8 \n other columns which goes by \n pairs of  'SomeCh name' and  'SomeCh name fitted'.\n If it is not the case, you should \n look at the picoscope driver."
+        self.metaDataText.setPlainText(Text)
         print(f"Error was found in the numpy picoscope datas file : {file_name}")
     return
