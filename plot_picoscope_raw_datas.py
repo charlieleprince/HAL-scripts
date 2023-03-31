@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from PyQt5.QtCore import Qt
 from pathlib import Path
-
+import pandas as pd
 # and also local modules from HAL
 from HAL.gui.dataexplorer import getSelectionMetaDataFromCache
 
@@ -49,59 +49,52 @@ def main(self):
         return
     # load data
 
-    try:
-        df = pd.read_pickle(path)
-        column_names = list(df.columns)
 
-        graph_titles = [
-            col_name
-            for col_name in column_names
-            if not ("Time" in col_name or "fitted" in col_name)
-        ]
-        time = df["Time"]
-        fig, axs = plt.subplots(2, 2)
-        for i, ax in enumerate(axs.flat):
-            name = graph_titles[i]
-            s = df[name]
-            sfit = df[name + " fitted"]
-            ax.plot(
-                time,
-                s,
-                ls="None",
-                marker=".",
-                label="Exp",
-                alpha=0.8,
-            )
-            ax.plot(
-                time,
-                sfit,
-                ls="-",
-                marker="None",
-                label="Fit",
-                alpha=0.8,
-            )
-            ax.set(xlabel="Time (ms)", ylabel=name + " (V)")
-            # ax.label_outer()
-            ax.legend()
-        plt.tight_layout()
-    except:
-        print("")
+    df = pd.read_pickle(file_name)
+    column_names = list(df.columns)
+
+    graph_titles = [
+        col_name
+        for col_name in column_names
+        if not ("Time" in col_name or "fitted" in col_name)
+    ]
+    time = df["Time"]
+    
+    if np.max(time) < 1.3e-6:
+        time = time *1e9
+        xlabel = "Time (ns)"
+    elif np.max(time) < 1.3e-3:
+        time = time *1e6
+        xlabel = "Time (us)"
+    elif  np.max(time) < 1.3:
+        time = time *1e3
+        xlabel = "Time (ms)"
+    else:
+        xlabel = "Time (s)"
+    fig, axs = plt.subplots(2, 2)
+    for i, ax in enumerate(axs.flat):
+        name = graph_titles[i]
+        s = df[name]
+        sfit = df[name + " fitted"]
+        ax.plot(
+            time,
+            s,
+            ls="None",
+            marker=".",
+            label="Exp",
+            alpha=0.8,
+        )
+        ax.plot(
+            time,
+            sfit,
+            ls="-",
+            marker="None",
+            label="Fit",
+            alpha=0.8,
+        )
+        ax.set(xlabel=xlabel, ylabel=name + " (mV)")
+        # ax.label_outer()
+        ax.legend()
+    plt.tight_layout()
     plt.show()
-    data = np.load(file_name)
-    # data[0] = Temps // data[i] = Voie i avec 1 <-> A ; 2 <-> B ; 3 <-> C ; 4 <-> D
-    plt.clf()
-    try:
-        fig = plt.figure(1)
-        plt.plot(data[0], data[1], ls="-", label="A")
-        plt.plot(data[0], data[2], ls="-.", label="B")
-        plt.plot(data[0], data[3], ls="--", label="C")
-        plt.plot(data[0], data[4], ls=":", label="D")
-        plt.xlabel("Time (ms)")
-        plt.ylabel("Measured signal (V)")
-        plt.legend()
-        plt.show()
-    except:
-        Text = f"Not possible to show the image. \n Please check you dataframe file : \n {file_name} \n We recall that the picoscope_raw_file  \n format is the following : \n One column named 'Time' and 8 \n other columns which goes by \n pairs of  'SomeCh name' and  'SomeCh name fitted'.\n If it is not the case, you should \n look at the picoscope driver."
-        self.metaDataText.setPlainText(Text)
-        print(f"Error was found in the numpy picoscope datas file : {file_name}")
     return
