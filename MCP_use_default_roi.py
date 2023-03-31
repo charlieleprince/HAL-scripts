@@ -205,6 +205,60 @@ def main(self):
                 "comment": "",
             }
         )
+        to_mcp_dictionary.append(
+            {
+                "name": "T_ROI0",
+                "value": np.mean(T_ROI0),
+                "display": "%.3g",
+                "unit": "",
+                "comment": "",
+            }
+        )
+        to_mcp_dictionary.append(
+            {
+                "name": "dT_ROI0",
+                "value": np.std(T_ROI0),
+                "display": "%.3g",
+                "unit": "",
+                "comment": "",
+            }
+        )
+        to_mcp_dictionary.append(
+            {
+                "name": "X_ROI0",
+                "value": np.mean(X_ROI0),
+                "display": "%.3g",
+                "unit": "",
+                "comment": "",
+            }
+        )
+        to_mcp_dictionary.append(
+            {
+                "name": "Y_ROI0",
+                "value": np.mean(Y_ROI0),
+                "display": "%.3g",
+                "unit": "",
+                "comment": "",
+            }
+        )
+        to_mcp_dictionary.append(
+            {
+                "name": "dX_ROI0",
+                "value": np.std(X_ROI0),
+                "display": "%.3g",
+                "unit": "",
+                "comment": "",
+            }
+        )
+        to_mcp_dictionary.append(
+            {
+                "name": "dY_ROI0",
+                "value": np.std(Y_ROI0),
+                "display": "%.3g",
+                "unit": "",
+                "comment": "",
+            }
+        )
 
         MCP_stats_folder = data.path.parent / ".MCPstats"
         MCP_stats_folder.mkdir(exist_ok=True)
