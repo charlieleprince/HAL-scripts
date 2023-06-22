@@ -3,16 +3,13 @@
 
 import logging
 import matplotlib.pyplot as plt
-import matplotlib.patches as patches
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+from matplotlib.colors import ListedColormap
 import numpy as np
 
 # import scipy.optimize as opt
 from scipy.stats import gaussian_kde
 import PySimpleGUI as sg
-from datetime import datetime
-from PyQt5.QtWidgets import QInputDialog
-from PyQt5.QtCore import Qt
 from PyQt5 import QtCore
 from pathlib import Path
 import pickle
@@ -35,6 +32,74 @@ sg.theme("LightGrey1")
 
 g = 9.81
 
+
+GREINER_CM = [
+    [1.0000, 1.0000, 1.0000, 1.0000],
+    [0.9474, 0.9474, 1.0000, 1.0000],
+    [0.8947, 0.8947, 1.0000, 1.0000],
+    [0.8421, 0.8421, 1.0000, 1.0000],
+    [0.7895, 0.7895, 1.0000, 1.0000],
+    [0.7368, 0.7368, 1.0000, 1.0000],
+    [0.6842, 0.6842, 1.0000, 1.0000],
+    [0.6316, 0.6316, 1.0000, 1.0000],
+    [0.5789, 0.5789, 1.0000, 1.0000],
+    [0.5263, 0.5263, 1.0000, 1.0000],
+    [0.4737, 0.4737, 1.0000, 1.0000],
+    [0.4211, 0.4211, 1.0000, 1.0000],
+    [0.3684, 0.3684, 1.0000, 1.0000],
+    [0.3158, 0.3158, 1.0000, 1.0000],
+    [0.2632, 0.2632, 1.0000, 1.0000],
+    [0.2105, 0.2105, 1.0000, 1.0000],
+    [0.1579, 0.1579, 1.0000, 1.0000],
+    [0.1053, 0.1053, 1.0000, 1.0000],
+    [0.0526, 0.0526, 1.0000, 1.0000],
+    [0.0000, 0.0000, 1.0000, 1.0000],
+    [0.0000, 0.0769, 1.0000, 1.0000],
+    [0.0000, 0.1538, 1.0000, 1.0000],
+    [0.0000, 0.2308, 1.0000, 1.0000],
+    [0.0000, 0.3077, 1.0000, 1.0000],
+    [0.0000, 0.3846, 1.0000, 1.0000],
+    [0.0000, 0.4615, 1.0000, 1.0000],
+    [0.0000, 0.5385, 1.0000, 1.0000],
+    [0.0000, 0.6154, 1.0000, 1.0000],
+    [0.0000, 0.6923, 1.0000, 1.0000],
+    [0.0000, 0.7692, 1.0000, 1.0000],
+    [0.0000, 0.8462, 1.0000, 1.0000],
+    [0.0000, 0.9231, 1.0000, 1.0000],
+    [0.0000, 1.0000, 1.0000, 1.0000],
+    [0.0769, 1.0000, 0.9231, 1.0000],
+    [0.1538, 1.0000, 0.8462, 1.0000],
+    [0.2308, 1.0000, 0.7692, 1.0000],
+    [0.3077, 1.0000, 0.6923, 1.0000],
+    [0.3846, 1.0000, 0.6154, 1.0000],
+    [0.4615, 1.0000, 0.5385, 1.0000],
+    [0.5385, 1.0000, 0.4615, 1.0000],
+    [0.6154, 1.0000, 0.3846, 1.0000],
+    [0.6923, 1.0000, 0.3077, 1.0000],
+    [0.7692, 1.0000, 0.2308, 1.0000],
+    [0.8462, 1.0000, 0.1538, 1.0000],
+    [0.9231, 1.0000, 0.0769, 1.0000],
+    [1.0000, 1.0000, 0.0000, 1.0000],
+    [1.0000, 0.9231, 0.0000, 1.0000],
+    [1.0000, 0.8462, 0.0000, 1.0000],
+    [1.0000, 0.7692, 0.0000, 1.0000],
+    [1.0000, 0.6923, 0.0000, 1.0000],
+    [1.0000, 0.6154, 0.0000, 1.0000],
+    [1.0000, 0.5385, 0.0000, 1.0000],
+    [1.0000, 0.4615, 0.0000, 1.0000],
+    [1.0000, 0.3846, 0.0000, 1.0000],
+    [1.0000, 0.3077, 0.0000, 1.0000],
+    [1.0000, 0.2308, 0.0000, 1.0000],
+    [1.0000, 0.1538, 0.0000, 1.0000],
+    [1.0000, 0.0769, 0.0000, 1.0000],
+    [1.0000, 0.0000, 0.0000, 1.0000],
+    [0.9000, 0.0000, 0.0000, 1.0000],
+    [0.8000, 0.0000, 0.0000, 1.0000],
+    [0.7000, 0.0000, 0.0000, 1.0000],
+    [0.6000, 0.0000, 0.0000, 1.0000],
+    [0.5000, 0.0000, 0.0000, 1.0000],
+]
+greiner = ListedColormap(GREINER_CM)
 
 def convert_to_speed(X, Y, T):
     L_fall = 46.5e-2  # in meters
@@ -201,6 +266,7 @@ def ROI_data(ROI, X, Y, T):
 
 def update_plot(values, X, Y, T, T_raw, ax1D, fig_agg1D, ax2D, fig_agg2D, nb_of_cycles):
     cmaps = [name for name in plt.colormaps() if not name.endswith("_r")]
+    cmaps.insert(0,"greiner")
     xy_lim = 40.0
     if values["ROI0"]:
         Xdata, Ydata, Tdata = X, Y, T
@@ -325,7 +391,10 @@ def update_plot(values, X, Y, T, T_raw, ax1D, fig_agg1D, ax2D, fig_agg2D, nb_of_
 
     if not values["colormap"] in cmaps:
         return
-    cmap = plt.get_cmap(values["colormap"])
+    if values["colormap"]=="greiner":
+        cmap = greiner
+    else:
+        cmap = plt.get_cmap(values["colormap"])
     coeff = 1.0
     if values["2dmax"]:
         coeff = float(values["max plot2d"]) / 100
@@ -542,6 +611,7 @@ def main(self):
     list_of_files.reverse()
     # gui layout
     cmaps = [name for name in plt.colormaps() if not name.endswith("_r")]
+    cmaps.insert(0,"greiner")
     fig2D, ax2D = plt.subplots(figsize=(6, 6))
     ax2D.hist2d(X, Y, bins=np.linspace(-40, 40, 160), cmap=plt.cm.nipy_spectral)
     ax2D.set_xlabel("X")
