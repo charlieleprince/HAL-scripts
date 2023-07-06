@@ -63,7 +63,7 @@ def exportROIinfo(to_mcp, ROI, nb):
             "name": "--ROI" + str(nb) + ":Xmax",
             "value": ROI["Xmax"],
             "display": "%.3g",
-            "unit": "",
+            "unit": "mm",
             "comment": "",
         }
     )
@@ -72,7 +72,7 @@ def exportROIinfo(to_mcp, ROI, nb):
             "name": "--ROI" + str(nb) + ":Ymin",
             "value": ROI["Ymin"],
             "display": "%.3g",
-            "unit": "",
+            "unit": "mm",
             "comment": "",
         }
     )
@@ -81,7 +81,7 @@ def exportROIinfo(to_mcp, ROI, nb):
             "name": "--ROI" + str(nb) + ":Ymax",
             "value": ROI["Ymax"],
             "display": "%.3g",
-            "unit": "",
+            "unit": "mm",
             "comment": "",
         }
     )
@@ -90,7 +90,7 @@ def exportROIinfo(to_mcp, ROI, nb):
             "name": "--ROI" + str(nb) + ":Tmin",
             "value": ROI["Tmin"],
             "display": "%.3g",
-            "unit": "",
+            "unit": "ms",
             "comment": "",
         }
     )
@@ -99,7 +99,7 @@ def exportROIinfo(to_mcp, ROI, nb):
             "name": "--ROI" + str(nb) + ":Tmax",
             "value": ROI["Tmax"],
             "display": "%.3g",
-            "unit": "",
+            "unit": "ms",
             "comment": "",
         }
     )
@@ -210,7 +210,7 @@ def main(self):
                 "name": "T_ROI0",
                 "value": np.mean(T_ROI0),
                 "display": "%.3g",
-                "unit": "",
+                "unit": "ms",
                 "comment": "",
             }
         )
@@ -219,7 +219,7 @@ def main(self):
                 "name": "dT_ROI0",
                 "value": np.std(T_ROI0),
                 "display": "%.3g",
-                "unit": "",
+                "unit": "ms",
                 "comment": "",
             }
         )
@@ -228,7 +228,7 @@ def main(self):
                 "name": "X_ROI0",
                 "value": np.mean(X_ROI0),
                 "display": "%.3g",
-                "unit": "",
+                "unit": "mm",
                 "comment": "",
             }
         )
@@ -237,7 +237,7 @@ def main(self):
                 "name": "Y_ROI0",
                 "value": np.mean(Y_ROI0),
                 "display": "%.3g",
-                "unit": "",
+                "unit": "mm",
                 "comment": "",
             }
         )
@@ -246,7 +246,7 @@ def main(self):
                 "name": "dX_ROI0",
                 "value": np.std(X_ROI0),
                 "display": "%.3g",
-                "unit": "",
+                "unit": "mm",
                 "comment": "",
             }
         )
@@ -255,7 +255,7 @@ def main(self):
                 "name": "dY_ROI0",
                 "value": np.std(Y_ROI0),
                 "display": "%.3g",
-                "unit": "",
+                "unit": "mm",
                 "comment": "",
             }
         )
