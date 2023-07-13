@@ -82,6 +82,72 @@ def fit_time_histo(T):
     popt, pcov = curve_fit(gaussian, bin_centers, bin_heights, p0=p0)
     return (popt, pcov)
 
+def add_roi_fit(to_mcp_dictionary, X_ROI, Y_ROI, T_ROI, roi_num = 0):
+    to_mcp_dictionary.append(
+        {
+            "name": "N_ROI{}".format(roi_num),
+            "value": len(X_ROI),
+            "display": "%.3g",
+            "unit": "",
+            "comment": "",
+        }
+    )
+    to_mcp_dictionary.append(
+        {
+            "name": "T_ROI{}".format(roi_num),
+            "value": np.mean(T_ROI),
+            "display": "%.3g",
+            "unit": "",
+            "comment": "",
+        }
+    )
+    to_mcp_dictionary.append(
+        {
+            "name": "dT_ROI{}".format(roi_num),
+            "value": np.std(T_ROI),
+            "display": "%.3g",
+            "unit": "",
+            "comment": "",
+        }
+    )
+    to_mcp_dictionary.append(
+        {
+            "name": "X_ROI{}".format(roi_num),
+            "value": np.mean(X_ROI),
+            "display": "%.3g",
+            "unit": "",
+            "comment": "",
+        }
+    )
+    to_mcp_dictionary.append(
+        {
+            "name": "Y_ROI{}".format(roi_num),
+            "value": np.mean(Y_ROI),
+            "display": "%.3g",
+            "unit": "",
+            "comment": "",
+        }
+    )
+    to_mcp_dictionary.append(
+        {
+            "name": "dX_ROI{}".format(roi_num),
+            "value": np.std(X_ROI),
+            "display": "%.3g",
+            "unit": "",
+            "comment": "",
+        }
+    )
+    to_mcp_dictionary.append(
+        {
+            "name": "dY_ROI{}".format(roi_num),
+            "value": np.std(Y_ROI),
+            "display": "%.3g",
+            "unit": "",
+            "comment": "",
+        }
+    )
+
+    return to_mcp_dictionary
 
 # main
 def main(self):
@@ -177,33 +243,11 @@ def main(self):
         ####
         ## NOMBRE D'ATOME PAR ROI
         ####
-        to_mcp_dictionary.append(
-            {
-                "name": "N_ROI0",
-                "value": N0,
-                "display": "%.3g",
-                "unit": "",
-                "comment": "",
-            }
-        )
-        to_mcp_dictionary.append(
-            {
-                "name": "N_ROI1",
-                "value": N1,
-                "display": "%.3g",
-                "unit": "",
-                "comment": "",
-            }
-        )
-        to_mcp_dictionary.append(
-            {
-                "name": "N_ROI2",
-                "value": N2,
-                "display": "%.3g",
-                "unit": "",
-                "comment": "",
-            }
-        )
+        to_mcp_dictionary = add_roi_fit(to_mcp_dictionary, X_ROI0, Y_ROI0, T_ROI0, roi_num = 0 )
+        to_mcp_dictionary = add_roi_fit(to_mcp_dictionary, X_ROI1, Y_ROI1, T_ROI1, roi_num = 1 )
+        to_mcp_dictionary = add_roi_fit(to_mcp_dictionary, X_ROI2, Y_ROI2, T_ROI2, roi_num = 2 )
+
+
         N012 = N0 + N1 + N2
 
         if N012 > 0:
