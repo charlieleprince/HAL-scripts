@@ -946,7 +946,8 @@ def main(self):
                 X = np.concatenate([X, Xa])
                 Y = np.concatenate([Y, Ya])
                 T = np.concatenate([T, Ta])
-                T_raw = np.concatenate([T_raw, T_rawa])
+                # T_raw = np.concatenate([T_raw, T_rawa])
+                T_raw = T_rawa  # Traw has a strange shape (4)
             total_cycles = len(list_of_files)
             update_plot(
                 values,
@@ -989,7 +990,8 @@ def main(self):
                     X = np.concatenate([X, Xa])
                     Y = np.concatenate([Y, Ya])
                     T = np.concatenate([T, Ta])
-                    T_raw = np.concatenate([T_raw, T_rawa])
+                    # T_raw = np.concatenate([T_raw, T_rawa])
+                    T_raw = T_rawa
             update_plot(
                 values,
                 X,

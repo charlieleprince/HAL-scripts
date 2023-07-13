@@ -5,8 +5,9 @@ import json
 import logging
 from statistics import mode
 import matplotlib.pyplot as plt
-import plotly.express as px
-import plotly.graph_objects as go
+
+# import plotly.express as px
+# import plotly.graph_objects as go
 import numpy as np
 import pandas as pd
 from scipy import stats
