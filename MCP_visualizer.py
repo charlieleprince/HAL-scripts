@@ -101,6 +101,16 @@ GREINER_CM = [
 ]
 greiner = ListedColormap(GREINER_CM)
 
+
+def setROIvalues(dict, values, str):
+    dict["Tmin"] = float(values["Tmin"])
+    dict["Tmax"] = float(values["Tmax"])
+    dict["Xmin"] = float(values["Xmin"])
+    dict["Xmax"] = float(values["Xmax"])
+    dict["Ymin"] = float(values["Ymin"])
+    dict["Ymax"] = float(values["Ymax"])
+
+
 def convert_to_speed(X, Y, T):
     L_fall = 46.5e-2  # in meters
     # transverse momenta
@@ -266,7 +276,7 @@ def ROI_data(ROI, X, Y, T):
 
 def update_plot(values, X, Y, T, T_raw, ax1D, fig_agg1D, ax2D, fig_agg2D, nb_of_cycles):
     cmaps = [name for name in plt.colormaps() if not name.endswith("_r")]
-    cmaps.insert(0,"greiner")
+    cmaps.insert(0, "greiner")
     xy_lim = 40.0
     if values["ROI0"]:
         Xdata, Ydata, Tdata = X, Y, T
@@ -391,7 +401,7 @@ def update_plot(values, X, Y, T, T_raw, ax1D, fig_agg1D, ax2D, fig_agg2D, nb_of_
 
     if not values["colormap"] in cmaps:
         return
-    if values["colormap"]=="greiner":
+    if values["colormap"] == "greiner":
         cmap = greiner
     else:
         cmap = plt.get_cmap(values["colormap"])
@@ -611,7 +621,7 @@ def main(self):
     list_of_files.reverse()
     # gui layout
     cmaps = [name for name in plt.colormaps() if not name.endswith("_r")]
-    cmaps.insert(0,"greiner")
+    cmaps.insert(0, "greiner")
     fig2D, ax2D = plt.subplots(figsize=(6, 6))
     ax2D.hist2d(X, Y, bins=np.linspace(-40, 40, 160), cmap=plt.cm.nipy_spectral)
     ax2D.set_xlabel("X")
@@ -699,7 +709,9 @@ def main(self):
         ],
         [sg.Checkbox("Convert to speed", default=False, key="conversion")],
         [
-            sg.Checkbox("Set to default", default=True, key="set to default"),
+            sg.Button(
+                "Set to default", button_color=("black", "white"), key="set to default"
+            )
         ],
         [sg.Text("2D graph options", font="Helvetica 10 bold", justification="center")],
         [
@@ -775,7 +787,15 @@ def main(self):
         [
             sg.Text("Selected data:", font="Helvetica 10 bold"),
             sg.Text(name_of_data, key="name"),
-        ]
+        ],
+        #       [
+        #          sg.Text("Number of atoms in ROI:", font="Helvetica 12 bold"),
+        #         sg.Text(name_of_data, key="nb of atoms in ROI"),
+        #      ],
+        #      [
+        #          sg.Text("Total number of atoms:", font="Helvetica 10 bold"),
+        #          sg.Text(name_of_data, key="nb of atoms"),
+        #      ],
     ]
     l1col3 = []
     # l3col1 = [[sg.Button("testbouton")]]
@@ -869,19 +889,12 @@ def main(self):
                 values, X, Y, T, T_raw, ax1D, fig_agg1D, ax2D, fig_agg2D, total_cycles
             )
 
-        if event == "Ok":
-            if values["set to default"]:
-                new_dict = EMPTY_DICT
-                setROIvalues(new_dict["ROI 0"], values, "0")
-                setROIvalues(new_dict["ROI 1"], values, "1")
-                setROIvalues(new_dict["ROI 2"], values, "2")
-                setROIvalues(new_dict["ROI 3"], values, "3")
-                with open(default_roi_file_name, "w", encoding="utf-8") as file:
-                    json.dump(new_dict, file, ensure_ascii=False, indent=4)
-            get_enabled_rois(ROI0, ROI1, ROI2, ROI3, values)
-            if ROI0["enabled"]:
-                setROIvalues(ROI0, values, "0")
-            break
+        if event == "set to default":
+            with open(default_roi_file_name, encoding="utf8") as f:
+                defaultroi = json.load(f)
+            setROIvalues(defaultroi["ROI 0"], values, "0")
+            with open(default_roi_file_name, "w", encoding="utf-8") as file:
+                json.dump(defaultroi, file, ensure_ascii=False, indent=4)
 
         if event == "Open 1D graph":
             buf = io.BytesIO()
