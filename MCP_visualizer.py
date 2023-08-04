@@ -557,8 +557,14 @@ def update_plot(values, X, Y, T, T_raw, ax1D, fig_agg1D, ax2D, fig_agg2D, nb_of_
     fig_agg1D.draw()
     fig_agg2D.draw()
 
+    nbatomsinROI = len(X)
+
     if values["ROI0"]:
+        nbatoms = len(Xdata)
         X, Y, T = Xdata, Ydata, Tdata
+    else:
+        nbatoms = len(X)
+    return (nbatomsinROI, nbatoms)
 
 
 # main
@@ -586,6 +592,8 @@ def main(self):
         return
     # get data
     X, Y, T = data.getrawdata()
+    nbatoms = len(X)
+    nbatomsinROI = len(X)
     # T_x2 = data.getdatafromsingleline()
     (T_x1, T_x2, T_y1, T_y2) = data.getunreconstructeddata()
     T_raw = [T_x1, T_x2, T_y1, T_y2]
@@ -710,7 +718,9 @@ def main(self):
         [sg.Checkbox("Convert to speed", default=False, key="conversion")],
         [
             sg.Button(
-                "Set to default", button_color=("black", "white"), key="set to default"
+                "Set ROI to default",
+                button_color=("black", "white"),
+                key="set to default",
             )
         ],
         [sg.Text("2D graph options", font="Helvetica 10 bold", justification="center")],
@@ -788,16 +798,23 @@ def main(self):
             sg.Text("Selected data:", font="Helvetica 10 bold"),
             sg.Text(name_of_data, key="name"),
         ],
-        #       [
-        #          sg.Text("Number of atoms in ROI:", font="Helvetica 12 bold"),
-        #         sg.Text(name_of_data, key="nb of atoms in ROI"),
-        #      ],
-        #      [
-        #          sg.Text("Total number of atoms:", font="Helvetica 10 bold"),
-        #          sg.Text(name_of_data, key="nb of atoms"),
-        #      ],
+        [
+            sg.Text("Number of atoms in ROI:", font="Helvetica 12 bold"),
+            sg.Text(nbatomsinROI, key="nb of atoms in ROI"),
+        ],
+        [
+            sg.Text("Total number of atoms:", font="Helvetica 10 bold"),
+            sg.Text(nbatoms, key="nb of atoms"),
+        ],
     ]
-    l1col3 = []
+    l1col3 = [
+        [
+            sg.Text(
+                "Everything I say may be wrong, please\n check the data with a more serious tool",
+                font="Helvetica 10",
+            ),
+        ]
+    ]
     # l3col1 = [[sg.Button("testbouton")]]
     l3col2 = [[sg.Canvas(key="-CANVAS2-")]]
     l3col3 = [
@@ -841,7 +858,7 @@ def main(self):
         [
             sg.Frame(layout=l1col1, title="", size=(400, 100)),
             sg.Frame(layout=l1col2, title="", size=(550, 100)),
-            sg.Frame(layout=l1col3, title="Quote of the day", size=(300, 100)),
+            sg.Frame(layout=l1col3, title="Disclaimer", size=(300, 100)),
         ],
         [
             sg.Frame(layout=l2col1, title="Options", size=(400, 550)),
@@ -885,9 +902,11 @@ def main(self):
             break
 
         if event == "update":
-            update_plot(
+            (nbatomsinROI, nbatoms) = update_plot(
                 values, X, Y, T, T_raw, ax1D, fig_agg1D, ax2D, fig_agg2D, total_cycles
             )
+            window["nb of atoms in ROI"].update(nbatomsinROI)
+            window["nb of atoms"].update(nbatoms)
 
         if event == "set to default":
             with open(default_roi_file_name, encoding="utf8") as f:
@@ -968,9 +987,11 @@ def main(self):
                 window["cycles"].Widget.canvas.yview_moveto(0.0)
             window.refresh()
             window["cycles"].contents_changed()
-            update_plot(
+            (nbatomsinROI, nbatoms) = update_plot(
                 values, X, Y, T, T_raw, ax1D, fig_agg1D, ax2D, fig_agg2D, total_cycles
             )
+            window["nb of atoms in ROI"].update(nbatomsinROI)
+            window["nb of atoms"].update(nbatoms)
             list_of_files = new_list_of_files
 
         for k in range(nbfiles):
@@ -983,7 +1004,7 @@ def main(self):
                 data.path = new_path
                 (X, Y, T, T_raw) = getrawdata(new_path)
                 total_cycles = 1
-                update_plot(
+                (nbatomsinROI, nbatoms) = update_plot(
                     values,
                     X,
                     Y,
@@ -995,6 +1016,8 @@ def main(self):
                     fig_agg2D,
                     total_cycles,
                 )
+                window["nb of atoms in ROI"].update(nbatomsinROI)
+                window["nb of atoms"].update(nbatoms)
                 # print(all_buttons[k][4:])
                 name_of_data = all_buttons[k][4:]
                 qc3 = ""
@@ -1032,18 +1055,11 @@ def main(self):
                 # T_raw = np.concatenate([T_raw, T_rawa])
                 T_raw = T_rawa  # Traw has a strange shape (4)
             total_cycles = len(list_of_files)
-            update_plot(
-                values,
-                X,
-                Y,
-                T,
-                T_raw,
-                ax1D,
-                fig_agg1D,
-                ax2D,
-                fig_agg2D,
-                len(list_of_files),
+            (nbatomsinROI, nbatoms) = update_plot(
+                values, X, Y, T, T_raw, ax1D, fig_agg1D, ax2D, fig_agg2D, total_cycles
             )
+            window["nb of atoms in ROI"].update(nbatomsinROI / total_cycles)
+            window["nb of atoms"].update(nbatoms / total_cycles)
             name_of_data = (
                 str(list_of_files[len(list_of_files) - 1]).split("_")[1]
                 + " - "
@@ -1075,18 +1091,11 @@ def main(self):
                     T = np.concatenate([T, Ta])
                     # T_raw = np.concatenate([T_raw, T_rawa])
                     T_raw = T_rawa
-            update_plot(
-                values,
-                X,
-                Y,
-                T,
-                T_raw,
-                ax1D,
-                fig_agg1D,
-                ax2D,
-                fig_agg2D,
-                total_cycles,
+            (nbatomsinROI, nbatoms) = update_plot(
+                values, X, Y, T, T_raw, ax1D, fig_agg1D, ax2D, fig_agg2D, total_cycles
             )
+            window["nb of atoms in ROI"].update(nbatomsinROI / total_cycles)
+            window["nb of atoms"].update(nbatoms / total_cycles)
             name_of_data = (
                 str(list_of_files_to_average[0]).split("_")[1]
                 + " - "
