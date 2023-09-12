@@ -1,3 +1,27 @@
+# !/usr/bin/env python
+#  -*-mode:Python; coding:utf8 -*-
+
+# ------------------------------------
+# Created on Tu Sep 2023 by Victor Gondret
+# Contact : victor.gondret@institutoptique
+#
+# MIT Copyright (c) 2023 - Helium1@LCF
+# Institut d'Optique Graduate School
+# Université Paris-Saclay
+# ------------------------------------
+#
+"""
+Decription of fit_paire_position.py 
+
+This code was designed to be run from HAL (https://github.com/adareau/HAL).
+The principle is he following : when the application is run, the model Model is instanciated. 
+Once it is instanciate, the application gets back all parameters of the model from the function self.model.get_parameters(). 
+This generates a dictionary from model.__dict__ in which each element is a number/list/string or boolean. 
+From this dictionary, the application built in a scrollable area a list of QLabels and Qlines to updtate parameters of the model. 
+The figure that is shown on the right is defined in the PlotZaxis class. It does not contains a lot but the method update_plot that is called each time the user pushes the button 'Update Plot'.  This function obviously need the model to be rightly updated.
+"""
+
+
 import sys
 import numpy as np
 import matplotlib.pyplot as plt
@@ -14,14 +38,18 @@ from PyQt5.QtWidgets import (
 )
 from PyQt5.QtGui import QIcon, QPixmap, QImage, QClipboard
 from PyQt5.QtCore import Qt
+from PyQt5 import QtCore
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
+from heliumtools.misc.gather_data import apply_ROI
 import pandas as pd
 import os
+from pathlib import Path
 from heliumtools.correlations import Correlation
 from scipy.optimize import curve_fit
 import seaborn as sns
 from PIL import Image
+from HAL.gui.dataexplorer import getSelectionMetaDataFromCache, _loadFileMetaData
 
 # Tous les paramètres du code affichés dans le graphique doivent être définis dans le dictionnaire ci-dessus
 # ils doivent tous être des flottants.
@@ -45,9 +73,17 @@ atoms = pd.read_pickle(
     os.path.join(HOM_FOLDER, "atoms_BSdelay_0000_us.pkl")
 ).reset_index(drop=True)
 
+# /!\/!\/!\
+# in order to be imported as a user script, two "global" variables
+# have to be defined: NAME and CATEGORY
+NAME = "1 NEW TEST"  # display name, used in menubar and command palette
+CATEGORY = "MCP"  # category (note that CATEGORY="" is a valid choice)
+
 
 class Model:
-    def __init__(self):
+    def __init__(self, hal_main_window):
+        self.hal_main_window = hal_main_window
+        self.get_data_from_selection()
         self.inertial_frame = [0, 0, 93]
         self.BEC_arrival_time = 307.5
         self.boxZsize = 1.3
@@ -57,6 +93,40 @@ class Model:
         self.range_for_fit = [18, 35]
         self.vperp_list = [10, 20, 30]
         self.plot_range = [-40, 40]
+
+    def get_data_from_selection(self):
+        """
+        Charge tous les .atoms depuis la sélection de HAL,r écupérée via la fenètre hal_main_window.
+        """
+        selection = self.hal_main_window.runList.selectedItems()
+        # get metadata from current selection
+        metadata = getSelectionMetaDataFromCache(
+            self.hal_main_window, update_cache=True
+        )
+        # -- get selected data
+        selection = self.hal_main_window.runList.selectedItems()
+        if not selection:
+            return
+        # -- init object data
+        # get object data type
+        data_class = self.hal_main_window.dataTypeComboBox.currentData()
+        data = data_class()
+        # get path
+        item = selection[0]
+        data.path = item.data(QtCore.Qt.UserRole)
+        if not data.path.suffix == ".atoms":
+            return
+        self.atoms = pd.DataFrame()
+        for k in range(len(selection)):
+            item = selection[k]
+            data.path = item.data(QtCore.Qt.UserRole)
+            X, Y, T = data.getrawdata()
+            new_cycle = pd.DataFrame(
+                {"X": X, "Y": Y, "T": T, "Cycle": np.ones(len(T)) * k}
+            )
+            new_cycle = apply_ROI(new_cycle, {"T": [311, 325]})
+            self.atoms = pd.concat([atoms, new_cycle])
+        self.atoms.reset_index(drop=True, inplace=True)
 
     def get_parameters(self):
         """return every attribut of the class as a strig if it is a boolean, a string or a number."""
@@ -130,7 +200,7 @@ class PlotZaxis:
             "Vz": model.inertial_frame[2],
         }
         corr = Correlation(
-            atoms,
+            model.atoms,
             ROI=ROI,
             bec_arrival_time=model.BEC_arrival_time,
             ref_frame_speed=inertial_frame,
@@ -148,7 +218,7 @@ class PlotZaxis:
             self.ax.scatter(
                 x,
                 hist / corr.n_cycles,
-                alpha=0.3,
+                alpha=0.4,
                 label=r"$\Delta V_z={:.1f}, \, \Delta V_\perp={:.0f}$ mm/s ".format(
                     model.boxZsize, vperp_max
                 ),
@@ -212,16 +282,18 @@ class PlotZaxis:
             )
         self.ax.set_xlabel("Velocity along z (mm/s)")
         self.ax.set_ylabel(r"Atoms per box $(mm/s)^{-3}$")
+        self.ax.grid(True)
+        self.ax.set_title(
+            r"Inertial frame : {} mm/s".format(model.inertial_frame), fontsize="medium"
+        )
         self.fig.tight_layout()
         self.canvas.draw()
 
 
 class DensityApplication(QWidget):
-    def __init__(
-        self,
-    ):
+    def __init__(self, hal_main_window):
         super().__init__()
-        self.model = Model()
+        self.model = Model(hal_main_window)
 
         self.initUI()
 
@@ -327,12 +399,42 @@ def gaussian(x, mean, amplitude, standard_deviation):
     return amplitude * np.exp(-((x - mean) ** 2) / (2 * standard_deviation**2))
 
 
-def main():
+def main(self):
+    """
+    the script also have to define a `main` function. When playing a script,
+    HAL runs `main` passes one (and only one) argument "self" that is the
+    HAL mainwindow object (granting access to all the gui attributes and methods)
+    """
+    # get metadata from current selection
+    metadata = getSelectionMetaDataFromCache(self, update_cache=True)
+    # -- get selected data
+    selection = self.runList.selectedItems()
+    print(metadata.keys())
+    print("*" * 50)
+    print(metadata["current selection"].keys())
+    print(metadata["current selection"]["file"].keys())
+    if not selection:
+        return
+    # -- init object data
+    # get object data type
+    data_class = self.dataTypeComboBox.currentData()
+    data = data_class()
+    # get path
+    item = selection[0]
+    data.path = item.data(QtCore.Qt.UserRole)
+    if not data.path.suffix == ".atoms":
+        return
+
+    # Il ne faut pas créer une application lorsqu'elle existe déjà
+    # (en l'occurence HAL ici).
+    # app = QApplication(sys.argv)
+    density_app = DensityApplication(self)
+    density_app.show()
+    # sys.exit(app.exec_())
+
+
+if __name__ == "__main__":
     app = QApplication(sys.argv)
     density_app = DensityApplication()
     density_app.show()
     sys.exit(app.exec_())
-
-
-if __name__ == "__main__":
-    main()
