@@ -38,17 +38,16 @@ from PyQt5.QtWidgets import (
 )
 from PyQt5.QtGui import QIcon, QPixmap, QImage, QClipboard
 from PyQt5.QtCore import Qt
-from PyQt5 import QtCore
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
-from heliumtools.misc.gather_data import apply_ROI
 import pandas as pd
 import os
-from pathlib import Path
 from heliumtools.correlations import Correlation
 from scipy.optimize import curve_fit
 import seaborn as sns
 from PIL import Image
+from heliumtools.misc.gather_data import apply_ROI
+from PyQt5 import QtCore
 from HAL.gui.dataexplorer import getSelectionMetaDataFromCache, _loadFileMetaData
 
 # Tous les paramètres du code affichés dans le graphique doivent être définis dans le dictionnaire ci-dessus
@@ -76,14 +75,14 @@ atoms = pd.read_pickle(
 # /!\/!\/!\
 # in order to be imported as a user script, two "global" variables
 # have to be defined: NAME and CATEGORY
-NAME = "1 NEW TEST"  # display name, used in menubar and command palette
-CATEGORY = "MCP"  # category (note that CATEGORY="" is a valid choice)
+NAME = "1. Density along z"  # display name, used in menubar and command palette
+CATEGORY = "Lattice Pairs"  # category (note that CATEGORY="" is a valid choice)
 
 
 class Model:
-    def __init__(self, hal_main_window):
-        self.hal_main_window = hal_main_window
-        self.get_data_from_selection()
+    def __init__(self, atoms, metadata):
+        self.atoms = atoms
+        self.metadat = metadata
         self.inertial_frame = [0, 0, 93]
         self.BEC_arrival_time = 307.5
         self.boxZsize = 1.3
@@ -93,40 +92,6 @@ class Model:
         self.range_for_fit = [18, 35]
         self.vperp_list = [10, 20, 30]
         self.plot_range = [-40, 40]
-
-    def get_data_from_selection(self):
-        """
-        Charge tous les .atoms depuis la sélection de HAL,r écupérée via la fenètre hal_main_window.
-        """
-        selection = self.hal_main_window.runList.selectedItems()
-        # get metadata from current selection
-        metadata = getSelectionMetaDataFromCache(
-            self.hal_main_window, update_cache=True
-        )
-        # -- get selected data
-        selection = self.hal_main_window.runList.selectedItems()
-        if not selection:
-            return
-        # -- init object data
-        # get object data type
-        data_class = self.hal_main_window.dataTypeComboBox.currentData()
-        data = data_class()
-        # get path
-        item = selection[0]
-        data.path = item.data(QtCore.Qt.UserRole)
-        if not data.path.suffix == ".atoms":
-            return
-        self.atoms = pd.DataFrame()
-        for k in range(len(selection)):
-            item = selection[k]
-            data.path = item.data(QtCore.Qt.UserRole)
-            X, Y, T = data.getrawdata()
-            new_cycle = pd.DataFrame(
-                {"X": X, "Y": Y, "T": T, "Cycle": np.ones(len(T)) * k}
-            )
-            new_cycle = apply_ROI(new_cycle, {"T": [311, 325]})
-            self.atoms = pd.concat([atoms, new_cycle])
-        self.atoms.reset_index(drop=True, inplace=True)
 
     def get_parameters(self):
         """return every attribut of the class as a strig if it is a boolean, a string or a number."""
@@ -140,7 +105,7 @@ class Model:
         """This function update the parameters dictionary, giving a key of the dictionary and a str_val"""
         key = key.replace(" ", "_")
         if key not in self.__dict__.keys():
-            print(f"WARNING : The {key} is not in the model.")
+            logger.warning(f"WARNING : The {key} is not in the model.")
             return str_val
         value = self.__dict__[key]
         try:
@@ -150,7 +115,9 @@ class Model:
                 elif str_val.lower() in "faux false":
                     self.__dict__[key] = False
                 else:
-                    print(f"WARNING: parameter boolean {key} was not recognized.")
+                    logger.warning(
+                        f"WARNING: parameter boolean {key} was not recognized."
+                    )
             elif type(value) in [float, int]:
                 value = float(str_value)
                 if int(value) == value:
@@ -169,10 +136,14 @@ class Model:
                         else:
                             value.append(float(i))
                     except:
-                        print(f"Warning: conversion of {i} to float in {key} failed.")
+                        logger.warning(
+                            f"Warning: conversion of {i} to float in {key} failed."
+                        )
                 self.__dict__[key] = value
             else:
-                print(f"WARNING : I did not recognized the type of the parameter {key}")
+                logger.warning(
+                    f"WARNING : I did not recognized the type of the parameter {key}"
+                )
             return str(self.__dict__[key])
         except:
             return str(self.__dict__[key])
@@ -238,17 +209,22 @@ class PlotZaxis:
                 np.max(hist1),
                 np.mean(hist1 * (bin_centers1 - bin_centers1[max_index])),
             ]
-            popt, pcov_paire_1 = curve_fit(gaussian, bin_centers1, hist1, p0=p0)
-            fit_absc = np.linspace(np.min(bin_centers1), np.max(bin_centers1), 50)
-            self.ax.plot(fit_absc, gaussian(fit_absc, *popt), "--", color="C" + str(i))
-            self.ax.text(
-                1.1 * popt[0],
-                1.1 * popt[1],
-                "{:.1f}".format(popt[0]),
-                color="C" + str(i),
-                ha="center",
-                bbox=dict(facecolor="white", alpha=0.3, boxstyle="round"),
-            )
+            try:
+                popt, pcov_paire_1 = curve_fit(gaussian, bin_centers1, hist1, p0=p0)
+                fit_absc = np.linspace(np.min(bin_centers1), np.max(bin_centers1), 50)
+                self.ax.plot(
+                    fit_absc, gaussian(fit_absc, *popt), "--", color="C" + str(i)
+                )
+                self.ax.text(
+                    1.1 * popt[0],
+                    1.1 * popt[1],
+                    "{:.1f}".format(popt[0]),
+                    color="C" + str(i),
+                    ha="center",
+                    bbox=dict(facecolor="white", alpha=0.3, boxstyle="round"),
+                )
+            except:
+                pass
 
             ###### Fits de la paire 2
             hist1, bins1 = np.histogram(
@@ -267,19 +243,24 @@ class PlotZaxis:
                 np.max(hist1),
                 np.mean(hist1 * (bin_centers1 - bin_centers1[max_index]) ** 2),
             ]
-            popt, pcov_paire_1 = curve_fit(
-                gaussian, bin_centers1, hist1, p0=p0, maxfev=5000
-            )
-            fit_absc = np.linspace(np.min(bin_centers1), np.max(bin_centers1), 50)
-            self.ax.plot(fit_absc, gaussian(fit_absc, *popt), "--", color="C" + str(i))
-            self.ax.text(
-                1.1 * popt[0],
-                1.1 * popt[1],
-                "{:.1f}".format(popt[0]),
-                color="C" + str(i),
-                ha="center",
-                bbox=dict(facecolor="white", alpha=0.3, boxstyle="round"),
-            )
+            try:
+                popt, pcov_paire_1 = curve_fit(
+                    gaussian, bin_centers1, hist1, p0=p0, maxfev=5000
+                )
+                fit_absc = np.linspace(np.min(bin_centers1), np.max(bin_centers1), 50)
+                self.ax.plot(
+                    fit_absc, gaussian(fit_absc, *popt), "--", color="C" + str(i)
+                )
+                self.ax.text(
+                    1.1 * popt[0],
+                    1.1 * popt[1],
+                    "{:.1f}".format(popt[0]),
+                    color="C" + str(i),
+                    ha="center",
+                    bbox=dict(facecolor="white", alpha=0.3, boxstyle="round"),
+                )
+            except:
+                pass
         self.ax.set_xlabel("Velocity along z (mm/s)")
         self.ax.set_ylabel(r"Atoms per box $(mm/s)^{-3}$")
         self.ax.grid(True)
@@ -291,9 +272,9 @@ class PlotZaxis:
 
 
 class DensityApplication(QWidget):
-    def __init__(self, hal_main_window):
+    def __init__(self, atoms, metadata):
         super().__init__()
-        self.model = Model(hal_main_window)
+        self.model = Model(atoms, metadata)
 
         self.initUI()
 
@@ -305,7 +286,7 @@ class DensityApplication(QWidget):
                 QIcon(os.path.join("icons", "chameau.png"))
             )  # Remplacez 'chemin_vers_votre_icone.ico' par le chemin de votre icône
         except:
-            print(
+            logger.warning(
                 "WARNING : Our camel is missing. Please find him as fast as possible !!"
             )
         # Left part of the windows : parameters
@@ -399,36 +380,36 @@ def gaussian(x, mean, amplitude, standard_deviation):
     return amplitude * np.exp(-((x - mean) ** 2) / (2 * standard_deviation**2))
 
 
-def main(self):
+def main(hal_main_window):
     """
     the script also have to define a `main` function. When playing a script,
-    HAL runs `main` passes one (and only one) argument "self" that is the
-    HAL mainwindow object (granting access to all the gui attributes and methods)
+    HAL runs `main` passes one (and only one) argument "hal_main_window" that is the HAL mainwindow object (granting access to all the gui attributes and methods)
     """
-    # get metadata from current selection
-    metadata = getSelectionMetaDataFromCache(self, update_cache=True)
     # -- get selected data
-    selection = self.runList.selectedItems()
-    print(metadata.keys())
-    print("*" * 50)
-    print(metadata["current selection"].keys())
-    print(metadata["current selection"]["file"].keys())
+    selection = hal_main_window.runList.selectedItems()
     if not selection:
         return
     # -- init object data
     # get object data type
-    data_class = self.dataTypeComboBox.currentData()
+    data_class = hal_main_window.dataTypeComboBox.currentData()
     data = data_class()
     # get path
     item = selection[0]
     data.path = item.data(QtCore.Qt.UserRole)
     if not data.path.suffix == ".atoms":
         return
-
-    # Il ne faut pas créer une application lorsqu'elle existe déjà
-    # (en l'occurence HAL ici).
+    atoms = pd.DataFrame()
+    for k in range(len(selection)):
+        item = selection[k]
+        data.path = item.data(QtCore.Qt.UserRole)
+        X, Y, T = data.getrawdata()
+        new_cycle = pd.DataFrame({"X": X, "Y": Y, "T": T, "Cycle": np.ones(len(T)) * k})
+        new_cycle = apply_ROI(new_cycle, {"T": [311, 325]})
+        atoms = pd.concat([atoms, new_cycle])
+    atoms.reset_index(drop=True, inplace=True)
+    metadata = getSelectionMetaDataFromCache(hal_main_window, update_cache=True)
     # app = QApplication(sys.argv)
-    density_app = DensityApplication(self)
+    density_app = DensityApplication(atoms, metadata)
     density_app.show()
     # sys.exit(app.exec_())
 
