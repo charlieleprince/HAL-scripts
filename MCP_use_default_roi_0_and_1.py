@@ -30,7 +30,7 @@ g = 9.81
 
 
 def gaussian(x, mean, amplitude, standard_deviation):
-    return amplitude * np.exp(-((x - mean) ** 2) / (2 * standard_deviation ** 2))
+    return amplitude * np.exp(-((x - mean) ** 2) / (2 * standard_deviation**2))
 
 
 def ROI_data(ROI, X, Y, T):
@@ -206,7 +206,6 @@ def main(self):
             }
         )
 
-        
         (X_ROI1, Y_ROI1, T_ROI1) = ROI_data(defaultroi["ROI 1"], X, Y, T)
         exportROIinfo(to_mcp_dictionary, defaultroi["ROI 1"], 1)
         to_mcp_dictionary.append(
@@ -220,19 +219,30 @@ def main(self):
         )
         nb0 = len(X_ROI0)
         nb1 = len(X_ROI1)
-        if nb0+nb1 >0:
-            nb0norm=nb0/(nb0+nb1)
-            to_mcp_dictionary.append(
-                {
-                    "name": "N_ROI0/(N_ROI0+N_ROI1)",
-                    "value": nb0norm,
-                    "display": "%.3g",
-                    "unit": "",
-                    "comment": "",
-                }
-            )
-
-
+        if nb0 + nb1 > 0:
+            nb0norm = nb0 / (nb0 + nb1)
+            nb1norm = nb1 / (nb0 + nb1)
+        else:
+            nb0norm = 0
+            nb1norm = 0
+        to_mcp_dictionary.append(
+            {
+                "name": "N_ROI0/(N_ROI0+N_ROI1)",
+                "value": nb0norm,
+                "display": "%.3g",
+                "unit": "",
+                "comment": "",
+            }
+        )
+        to_mcp_dictionary.append(
+            {
+                "name": "N_ROI1/(N_ROI0+N_ROI1)",
+                "value": nb1norm,
+                "display": "%.3g",
+                "unit": "",
+                "comment": "",
+            }
+        )
 
         MCP_stats_folder = data.path.parent / ".MCPstats"
         MCP_stats_folder.mkdir(exist_ok=True)
