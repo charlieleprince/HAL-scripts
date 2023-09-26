@@ -801,6 +801,7 @@ def main(self):
 
         if event == "Ok":
             if values["set to default"]:
+                
                 new_dict = EMPTY_DICT
                 setROIvalues(new_dict["ROI 0"], values, "0")
                 setROIvalues(new_dict["ROI 1"], values, "1")
@@ -935,6 +936,7 @@ def main(self):
             X = []
             Y = []
             T = []
+            T_raw = []
             for k in range(len(list_of_files)):
                 new_path = (
                     data.path.parent.parent
@@ -946,7 +948,7 @@ def main(self):
                 X = np.concatenate([X, Xa])
                 Y = np.concatenate([Y, Ya])
                 T = np.concatenate([T, Ta])
-                T_raw = np.concatenate([T_raw, T_rawa])
+                T_raw = T_rawa
             total_cycles = len(list_of_files)
             update_plot(
                 values,
