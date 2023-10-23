@@ -1,11 +1,25 @@
+#!/usr/bin/env python3
+# -*- mode: Python; coding: utf-8 -*-
+
+"""
+@Author: victor
+@Date:   13 July 2023 @ 10:56
+@Last modified by:   victor
+@Last modified time: 13 July 2023 @ 10:56
+
+Comment :
+"""
+
+
 from pathlib import Path
 import json
 import logging
 from statistics import mode
 import matplotlib.pyplot as plt
-import plotly.express as px
-import plotly.graph_objects as go
-from mayavi import mlab
+
+# import plotly.express as px
+# import plotly.graph_objects as go
+# from mayavi import mlab
 import numpy as np
 import pandas as pd
 from scipy import stats
