@@ -28,21 +28,17 @@ def main(self):
     """
     # -- get selected data
     selection = self.runList.selectedItems()
-    print("Action Picoscope")
     if not selection:
         Text = "Please, select at least \n one file if you want to \n look at Picoscope Datas."
         self.metaDataText.setPlainText(Text)
         return
     # get path
     item = selection[0]  # item is a PyQt5.QtWidgets.QListWidgetItem object
-    print(item)
     data = item.data(Qt.UserRole)
     # if data.path is something like /mnt/manip_E/2023/02/12/003/003_018.png
     # data.stem is 003_018
     # and data.parent is /mnt/manip_E/2023/02/12/003/
     file_name = data.with_suffix(".picoscope_raw_data")
-    print("--------------")
-    print(file_name)
     if not file_name.is_file():
         Text = f"No Picoscope Raw Data \n file was found for this cycle. \n Please choose a cycle for wich \n picoscope datas were taken. \n {file_name}"
         self.metaDataText.setPlainText(Text)
@@ -59,7 +55,7 @@ def main(self):
         if not ("Time" in col_name or "fitted" in col_name)
     ]
     time = df["Time"]
-    
+
     if np.max(time) < 1.3e-6:
         time = time *1e9
         xlabel = "Time (ns)"
@@ -75,7 +71,7 @@ def main(self):
     for i, ax in enumerate(axs.flat):
         name = graph_titles[i]
         s = df[name]
-        sfit = df[name + " fitted"]
+
         ax.plot(
             time,
             s,
@@ -84,15 +80,28 @@ def main(self):
             label="Exp",
             alpha=0.8,
         )
-        ax.plot(
-            time,
-            sfit,
-            ls="-",
-            marker="None",
-            label="Fit",
-            alpha=0.8,
-        )
+        if name + " fitted" in df.columns:
+            sfit = df[name + " fitted"]
+            ax.plot(
+                time,
+                sfit,
+                ls="-",
+                marker="None",
+                label="Fit",
+                alpha=0.8,
+            )
+        if name + " fitted2" in df.columns:
+            sfit = df[name + " fitted2"]
+            ax.plot(
+                time,
+                sfit,
+                ls="-",
+                marker="None",
+                label="Fit2",
+                alpha=0.8,
+            )
         ax.set(xlabel=xlabel, ylabel=name + " (mV)")
+        ax.grid(True, alpha = 0.7)
         # ax.label_outer()
         ax.legend()
     plt.tight_layout()

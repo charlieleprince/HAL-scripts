@@ -101,16 +101,6 @@ GREINER_CM = [
 ]
 greiner = ListedColormap(GREINER_CM)
 
-
-def setROIvalues(dict, values, str):
-    dict["Tmin"] = float(values["Tmin"])
-    dict["Tmax"] = float(values["Tmax"])
-    dict["Xmin"] = float(values["Xmin"])
-    dict["Xmax"] = float(values["Xmax"])
-    dict["Ymin"] = float(values["Ymin"])
-    dict["Ymax"] = float(values["Ymax"])
-
-
 def convert_to_speed(X, Y, T):
     L_fall = 46.5e-2  # in meters
     # transverse momenta
@@ -278,7 +268,7 @@ def ROI_data(ROI, X, Y, T):
 
 def update_plot(values, X, Y, T, T_raw, ax1D, fig_agg1D, ax2D, fig_agg2D, nb_of_cycles):
     cmaps = [name for name in plt.colormaps() if not name.endswith("_r")]
-    cmaps.insert(0, "greiner")
+    cmaps.insert(0,"greiner")
     xy_lim = 40.0
     if values["ROI0"]:
         Xdata, Ydata, Tdata = X, Y, T
@@ -403,7 +393,7 @@ def update_plot(values, X, Y, T, T_raw, ax1D, fig_agg1D, ax2D, fig_agg2D, nb_of_
 
     if not values["colormap"] in cmaps:
         return
-    if values["colormap"] == "greiner":
+    if values["colormap"]=="greiner":
         cmap = greiner
     else:
         cmap = plt.get_cmap(values["colormap"])
@@ -559,14 +549,8 @@ def update_plot(values, X, Y, T, T_raw, ax1D, fig_agg1D, ax2D, fig_agg2D, nb_of_
     fig_agg1D.draw()
     fig_agg2D.draw()
 
-    nbatomsinROI = len(X)
-
     if values["ROI0"]:
-        nbatoms = len(Xdata)
         X, Y, T = Xdata, Ydata, Tdata
-    else:
-        nbatoms = len(X)
-    return (nbatomsinROI, nbatoms)
 
 
 # main
@@ -594,8 +578,6 @@ def main(self):
         return
     # get data
     X, Y, T = data.getrawdata()
-    nbatoms = len(X)
-    nbatomsinROI = len(X)
     # T_x2 = data.getdatafromsingleline()
     (T_x1, T_x2, T_y1, T_y2) = data.getunreconstructeddata()
     T_raw = [T_x1, T_x2, T_y1, T_y2]
@@ -631,7 +613,7 @@ def main(self):
     list_of_files.reverse()
     # gui layout
     cmaps = [name for name in plt.colormaps() if not name.endswith("_r")]
-    cmaps.insert(0, "greiner")
+    cmaps.insert(0,"greiner")
     fig2D, ax2D = plt.subplots(figsize=(6, 6))
     ax2D.hist2d(X, Y, bins=np.linspace(-40, 40, 160), cmap=plt.cm.nipy_spectral)
     ax2D.set_xlabel("X")
@@ -719,11 +701,7 @@ def main(self):
         ],
         [sg.Checkbox("Convert to speed", default=False, key="conversion")],
         [
-            sg.Button(
-                "Set ROI to default",
-                button_color=("black", "white"),
-                key="set to default",
-            )
+            sg.Checkbox("Set to default", default=True, key="set to default"),
         ],
         [sg.Text("2D graph options", font="Helvetica 10 bold", justification="center")],
         [
@@ -799,24 +777,9 @@ def main(self):
         [
             sg.Text("Selected data:", font="Helvetica 10 bold"),
             sg.Text(name_of_data, key="name"),
-        ],
-        [
-            sg.Text("Number of atoms in ROI:", font="Helvetica 12 bold"),
-            sg.Text(nbatomsinROI, key="nb of atoms in ROI"),
-        ],
-        [
-            sg.Text("Total number of atoms:", font="Helvetica 10 bold"),
-            sg.Text(nbatoms, key="nb of atoms"),
-        ],
-    ]
-    l1col3 = [
-        [
-            sg.Text(
-                "Everything I say may be wrong, please\n check the data with a more serious tool",
-                font="Helvetica 10",
-            ),
         ]
     ]
+    l1col3 = []
     # l3col1 = [[sg.Button("testbouton")]]
     l3col2 = [[sg.Canvas(key="-CANVAS2-")]]
     l3col3 = [
@@ -860,7 +823,7 @@ def main(self):
         [
             sg.Frame(layout=l1col1, title="", size=(400, 100)),
             sg.Frame(layout=l1col2, title="", size=(550, 100)),
-            sg.Frame(layout=l1col3, title="Disclaimer", size=(300, 100)),
+            sg.Frame(layout=l1col3, title="Quote of the day", size=(300, 100)),
         ],
         [
             sg.Frame(layout=l2col1, title="Options", size=(400, 550)),
@@ -904,18 +867,24 @@ def main(self):
             break
 
         if event == "update":
-            (nbatomsinROI, nbatoms) = update_plot(
+            update_plot(
                 values, X, Y, T, T_raw, ax1D, fig_agg1D, ax2D, fig_agg2D, total_cycles
             )
-            window["nb of atoms in ROI"].update(nbatomsinROI)
-            window["nb of atoms"].update(nbatoms)
 
-        if event == "set to default":
-            with open(default_roi_file_name, encoding="utf8") as f:
-                defaultroi = json.load(f)
-            setROIvalues(defaultroi["ROI 0"], values, "0")
-            with open(default_roi_file_name, "w", encoding="utf-8") as file:
-                json.dump(defaultroi, file, ensure_ascii=False, indent=4)
+        if event == "Ok":
+            if values["set to default"]:
+                
+                new_dict = EMPTY_DICT
+                setROIvalues(new_dict["ROI 0"], values, "0")
+                setROIvalues(new_dict["ROI 1"], values, "1")
+                setROIvalues(new_dict["ROI 2"], values, "2")
+                setROIvalues(new_dict["ROI 3"], values, "3")
+                with open(default_roi_file_name, "w", encoding="utf-8") as file:
+                    json.dump(new_dict, file, ensure_ascii=False, indent=4)
+            get_enabled_rois(ROI0, ROI1, ROI2, ROI3, values)
+            if ROI0["enabled"]:
+                setROIvalues(ROI0, values, "0")
+            break
 
         if event == "Open 1D graph":
             buf = io.BytesIO()
@@ -989,11 +958,9 @@ def main(self):
                 window["cycles"].Widget.canvas.yview_moveto(0.0)
             window.refresh()
             window["cycles"].contents_changed()
-            (nbatomsinROI, nbatoms) = update_plot(
+            update_plot(
                 values, X, Y, T, T_raw, ax1D, fig_agg1D, ax2D, fig_agg2D, total_cycles
             )
-            window["nb of atoms in ROI"].update(nbatomsinROI)
-            window["nb of atoms"].update(nbatoms)
             list_of_files = new_list_of_files
 
         for k in range(nbfiles):
@@ -1006,7 +973,7 @@ def main(self):
                 data.path = new_path
                 (X, Y, T, T_raw) = getrawdata(new_path)
                 total_cycles = 1
-                (nbatomsinROI, nbatoms) = update_plot(
+                update_plot(
                     values,
                     X,
                     Y,
@@ -1018,8 +985,6 @@ def main(self):
                     fig_agg2D,
                     total_cycles,
                 )
-                window["nb of atoms in ROI"].update(nbatomsinROI)
-                window["nb of atoms"].update(nbatoms)
                 # print(all_buttons[k][4:])
                 name_of_data = all_buttons[k][4:]
                 qc3 = ""
@@ -1043,6 +1008,7 @@ def main(self):
             X = []
             Y = []
             T = []
+            T_raw = []
             for k in range(len(list_of_files)):
                 new_path = (
                     data.path.parent.parent
@@ -1054,14 +1020,20 @@ def main(self):
                 X = np.concatenate([X, Xa])
                 Y = np.concatenate([Y, Ya])
                 T = np.concatenate([T, Ta])
-                # T_raw = np.concatenate([T_raw, T_rawa])
-                T_raw = T_rawa  # Traw has a strange shape (4)
+                T_raw = T_rawa
             total_cycles = len(list_of_files)
-            (nbatomsinROI, nbatoms) = update_plot(
-                values, X, Y, T, T_raw, ax1D, fig_agg1D, ax2D, fig_agg2D, total_cycles
+            update_plot(
+                values,
+                X,
+                Y,
+                T,
+                T_raw,
+                ax1D,
+                fig_agg1D,
+                ax2D,
+                fig_agg2D,
+                len(list_of_files),
             )
-            window["nb of atoms in ROI"].update(nbatomsinROI / total_cycles)
-            window["nb of atoms"].update(nbatoms / total_cycles)
             name_of_data = (
                 str(list_of_files[len(list_of_files) - 1]).split("_")[1]
                 + " - "
@@ -1091,13 +1063,19 @@ def main(self):
                     X = np.concatenate([X, Xa])
                     Y = np.concatenate([Y, Ya])
                     T = np.concatenate([T, Ta])
-                    # T_raw = np.concatenate([T_raw, T_rawa])
-                    T_raw = T_rawa
-            (nbatomsinROI, nbatoms) = update_plot(
-                values, X, Y, T, T_raw, ax1D, fig_agg1D, ax2D, fig_agg2D, total_cycles
+                    T_raw = np.concatenate([T_raw, T_rawa])
+            update_plot(
+                values,
+                X,
+                Y,
+                T,
+                T_raw,
+                ax1D,
+                fig_agg1D,
+                ax2D,
+                fig_agg2D,
+                total_cycles,
             )
-            window["nb of atoms in ROI"].update(nbatomsinROI / total_cycles)
-            window["nb of atoms"].update(nbatoms / total_cycles)
             name_of_data = (
                 str(list_of_files_to_average[0]).split("_")[1]
                 + " - "
