@@ -325,6 +325,6 @@ def main(self):
     )
 
     plt.tight_layout()
-    plt.savefig("pairs_density_1D.pdf", bbox_inches="tight")
+    #plt.savefig("pairs_density_1D.pdf", bbox_inches="tight")
 
     fig.show()

@@ -138,9 +138,6 @@ def getrawdata(path):
     time_resolution = 1.2e-10
     # time_to_pos = 2 * 0.98e-9
     atoms_file = np.fromfile(path, dtype="uint64")
-    times_file_path = str(path.parent) + "/" + str(path.stem) + ".times"
-    times_file = np.fromfile(times_file_path, dtype="uint64")
-    T_x2 = times_file * time_resolution * 1e3
     atoms = atoms_file * time_resolution
 
     events_list = atoms.reshape(int(len(atoms) / 4), 4).T
@@ -153,7 +150,12 @@ def getrawdata(path):
     T = (events_list[0] + events_list[1] + events_list[2] + events_list[3]) / 4
 
     T = T * 1e3
-
+    times_file_path = str(path.parent) + "/" + str(path.stem) + ".times"
+    if os.path.exists(times_file_path):
+        times_file = np.fromfile(times_file_path, dtype="uint64")
+        T_x2 = times_file * time_resolution * 1e3
+    else:
+        T_x2 = []
     timesx1_file_path = str(path.parent) + "/" + str(path.stem) + ".timesx1"
     if os.path.exists(timesx1_file_path):
         timesx1_file = np.fromfile(timesx1_file_path, dtype="uint64")
