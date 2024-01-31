@@ -1046,18 +1046,12 @@ def main(self):
                 T = np.concatenate([T, Ta])
                 T_raw = T_rawa
             total_cycles = len(list_of_files)
-            update_plot(
-                values,
-                X,
-                Y,
-                T,
-                T_raw,
-                ax1D,
-                fig_agg1D,
-                ax2D,
-                fig_agg2D,
-                len(list_of_files),
+            
+            (nbatomsinROI, nbatoms) = update_plot(
+                values, X, Y, T, T_raw, ax1D, fig_agg1D, ax2D, fig_agg2D, total_cycles
             )
+            window["nb of atoms in ROI"].update(nbatomsinROI / total_cycles)
+            window["nb of atoms"].update(nbatoms / total_cycles)
             name_of_data = (
                 str(list_of_files[len(list_of_files) - 1]).split("_")[1]
                 + " - "
@@ -1087,19 +1081,13 @@ def main(self):
                     X = np.concatenate([X, Xa])
                     Y = np.concatenate([Y, Ya])
                     T = np.concatenate([T, Ta])
-                    T_raw = np.concatenate([T_raw, T_rawa])
-            update_plot(
-                values,
-                X,
-                Y,
-                T,
-                T_raw,
-                ax1D,
-                fig_agg1D,
-                ax2D,
-                fig_agg2D,
-                total_cycles,
+                    # T_raw = np.concatenate([T_raw, T_rawa])
+                    T_raw = T_rawa
+            (nbatomsinROI, nbatoms) = update_plot(
+                values, X, Y, T, T_raw, ax1D, fig_agg1D, ax2D, fig_agg2D, total_cycles
             )
+            window["nb of atoms in ROI"].update(nbatomsinROI / total_cycles)
+            window["nb of atoms"].update(nbatoms / total_cycles)
             name_of_data = (
                 str(list_of_files_to_average[0]).split("_")[1]
                 + " - "
